@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+:root {
+  /* Surfaces */
+  --background: #f7f8fa;
+  --surface: #ffffff;
+  --surface-muted: #f1f3f6;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+
+  /* Viewer stays dark even in light mode (clinical PACS look) */
+  --viewer-bg: #0a0e14;
+
+  /* Brand + semantic */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --teal: #0d9488;    /* healthy tissue */
+  --danger: #dc2626;  /* tumor / malignant */
+  --warning: #f59e0b; /* OOD / low confidence */
+  --success: #16a34a;
+  --necrosis: #7c3aed; /* necrotic tissue */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-viewer: var(--viewer-bg);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-teal: var(--teal);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-necrosis: var(--necrosis);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --radius: 0.625rem;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numbers for all stats */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thin scrollbars for panels */
+.panel-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.panel-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+.panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
