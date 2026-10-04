@@ -1,6 +1,16 @@
 export type Locale = "zh-TW" | "en";
 
 const zh: Record<string, string> = {
+  "Region inspection": "區域檢視",
+  "Select a region to zoom in, or click a marked area on the slide.": "選取區域即可局部放大，也可直接點選切片中的標記區域。",
+  "Back to full slide": "回到全圖",
+  "Slide display": "切片顯示",
+  "Original image": "原圖",
+  "Suspected malignant regions": "疑似惡性區域",
+  "Region": "區域",
+  "Run analysis to reveal suspected regions.": "完成分析後，即可顯示疑似惡性區域。",
+  "Switch to the original image to hide all overlays. Zoom and position are preserved.": "切換至原圖可隱藏所有標記，縮放倍率與位置會保留。",
+  "Demo regions from the synthetic slide; not actual model evidence.": "合成切片的模擬區域，並非真實模型的判定依據。",
   "Disagree": "不同意此結果",
   "Close assistant": "關閉助手",
   "Send message": "傳送訊息",

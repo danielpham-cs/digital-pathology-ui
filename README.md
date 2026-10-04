@@ -32,6 +32,10 @@ Built for a hackathon demo — the entire app runs **offline on mock data** with
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · OpenSeadragon · Recharts ·
 Motion · Zustand · lucide-react. UI primitives are hand-rolled in `components/ui/`.
 
+## Slide display / 切片顯示
+
+After analysis completes, the viewer displays numbered suspected malignant regions from the synthetic slide. Use **Original image / Suspected malignant regions** in the left panel to compare the untouched image with the demo annotations. Original mode hides every overlay without changing the viewport or layer settings. Resetting or rerunning analysis returns to original mode. Select a numbered region in the left panel, or click a marked area on the slide, to zoom to its bounds. The selected outline turns yellow; **Back to full slide** restores the overview. Region selection also works in original-image mode for examining the same location without annotations. Region annotations are illustrative synthetic data, not model-derived explanations or clinical evidence.
+
 ## Language / 語言
 
 Use the top-right **中文 / English** switch to change the entire workspace.
