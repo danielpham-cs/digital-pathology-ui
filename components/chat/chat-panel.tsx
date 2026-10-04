@@ -1,13 +1,17 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { MessageSquare, X, Send, Sparkles, Loader2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { SUGGESTED_PROMPTS } from "@/lib/mock-data";
+import { respond } from "@/lib/assistant";
 import { cn } from "@/lib/utils";
 
 export function ChatPanel() {
+  const { t, locale } = useI18n();
   const open = useStore((s) => s.chatOpen);
   const toggle = useStore((s) => s.toggleChat);
   const messages = useStore((s) => s.chatMessages);
@@ -21,7 +25,7 @@ export function ChatPanel() {
   }, [messages, thinking]);
 
   const submit = (text: string) => {
-    send(text);
+    send(text, locale);
     setDraft("");
   };
 
@@ -36,8 +40,7 @@ export function ChatPanel() {
         )}
         style={{ left: 276 }}
       >
-        <Sparkles className="size-4" /> Ask AI
-      </button>
+        <Sparkles className="size-4" />{t("Ask AI")}</button>
 
       <AnimatePresence>
         {open && (
@@ -56,11 +59,12 @@ export function ChatPanel() {
                   <Sparkles className="size-4" />
                 </div>
                 <div className="leading-tight">
-                  <div className="text-sm font-semibold">Slide Assistant</div>
-                  <div className="text-[10px] text-muted">Reports model outputs · doesn&apos;t diagnose</div>
+                  <div className="text-sm font-semibold">{t("Slide Assistant")}</div>
+                  <div className="text-[10px] text-muted">{t("Reports model outputs · doesn’t diagnose")}</div>
                 </div>
               </div>
               <button
+                aria-label={t("Close assistant")}
                 onClick={toggle}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-muted cursor-pointer"
               >
@@ -73,10 +77,7 @@ export function ChatPanel() {
               {messages.length === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
                   <MessageSquare className="size-7 text-muted/50" />
-                  <p className="max-w-[240px] text-xs leading-relaxed text-muted">
-                    Ask about this slide&apos;s results. Answers are grounded in the quantitative
-                    models — the assistant never invents numbers.
-                  </p>
+                  <p className="max-w-[240px] text-xs leading-relaxed text-muted">{t("Ask about this slide’s results. Answers are grounded in the quantitative models — the assistant never invents numbers.")}</p>
                 </div>
               )}
               {messages.map((m, i) => (
@@ -92,15 +93,15 @@ export function ChatPanel() {
                         : "bg-surface-muted text-foreground"
                     )}
                   >
-                    <p>{m.content}</p>
+                    <p>{m.role === "assistant" && m.question && m.caseSnapshot ? respond(m.question, m.caseSnapshot, locale).content : m.content}</p>
                     {m.sources && m.sources.length > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1 border-t border-border/60 pt-1.5">
-                        {m.sources.map((s) => (
+                        {(m.question && m.caseSnapshot ? respond(m.question, m.caseSnapshot, locale).sources ?? [] : m.sources).map((s) => (
                           <span
-                            key={s}
+                            key={t(s)}
                             className="rounded-full bg-surface px-1.5 py-0.5 text-[9px] font-medium text-muted"
                           >
-                            {s}
+                            {t(s)}
                           </span>
                         ))}
                       </div>
@@ -111,8 +112,7 @@ export function ChatPanel() {
               {thinking && (
                 <div className="flex justify-start">
                   <div className="flex items-center gap-1.5 rounded-2xl bg-surface-muted px-3 py-2 text-xs text-muted">
-                    <Loader2 className="size-3 animate-spin" /> Checking model outputs…
-                  </div>
+                    <Loader2 className="size-3 animate-spin" />{t("Checking model outputs…")}</div>
                 </div>
               )}
             </div>
@@ -122,11 +122,11 @@ export function ChatPanel() {
               <div className="flex flex-wrap gap-1.5 px-3.5 pb-2">
                 {SUGGESTED_PROMPTS.map((p) => (
                   <button
-                    key={p}
-                    onClick={() => submit(p)}
+                    key={t(p)}
+                    onClick={() => submit(t(p))}
                     className="rounded-full border border-border px-2.5 py-1 text-[10px] text-muted transition-colors hover:border-primary hover:text-primary cursor-pointer"
                   >
-                    {p}
+                    {t(p)}
                   </button>
                 ))}
               </div>
@@ -143,10 +143,11 @@ export function ChatPanel() {
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Ask about this slide…"
+                placeholder={t("Ask about this slide…")}
                 className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-primary"
               />
               <button
+                aria-label={t("Send message")}
                 type="submit"
                 disabled={!draft.trim()}
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground disabled:opacity-40 cursor-pointer"

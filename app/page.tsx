@@ -1,5 +1,8 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
+import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { TopBar } from "@/components/layout/top-bar";
 import { LeftPanel } from "@/components/layout/left-panel";
@@ -12,15 +15,21 @@ const WSIViewer = dynamic(
   () => import("@/components/viewer/wsi-viewer").then((m) => m.WSIViewer),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center bg-viewer text-xs text-white/50">
-        Loading slide…
-      </div>
-    ),
+    loading: () => <ViewerLoading />,
   }
 );
 
+function ViewerLoading() {
+  const { t } = useI18n();
+  return <div className="flex h-full w-full items-center justify-center bg-viewer text-xs text-white/50">{t("Loading slide…")}</div>;
+}
+
 export default function Home() {
+  const { locale } = useI18n();
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.title = locale === "zh-TW" ? "PathologyAI — 數位病理工作台" : "PathologyAI — Digital Pathology Workspace";
+  }, [locale]);
   return (
     <div className="flex h-full flex-col">
       <TopBar />

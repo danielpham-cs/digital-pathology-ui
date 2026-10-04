@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 import { Layers, Eye, EyeOff } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -7,6 +9,7 @@ import { cn } from "@/lib/utils";
 const MAG_PRESETS = [2, 10, 20, 40];
 
 export function LeftPanel() {
+  const { t } = useI18n();
   const layers = useStore((s) => s.layers);
   const toggleLayer = useStore((s) => s.toggleLayer);
   const setLayerOpacity = useStore((s) => s.setLayerOpacity);
@@ -14,7 +17,7 @@ export function LeftPanel() {
   return (
     <aside className="flex w-[260px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-border bg-surface p-4 panel-scroll">
       <section>
-        <SectionTitle icon={<Layers className="size-3.5" />}>Overlay layers</SectionTitle>
+        <SectionTitle icon={<Layers className="size-3.5" />}>{t("Overlay layers")}</SectionTitle>
         <div className="space-y-3">
           {layers.map((layer) => (
             <div key={layer.id} className="rounded-[var(--radius)] border border-border p-2.5">
@@ -29,7 +32,7 @@ export function LeftPanel() {
                     borderColor: layer.color,
                   }}
                 />
-                <span className="flex-1 text-xs font-medium">{layer.label}</span>
+                <span className="flex-1 text-xs font-medium">{t(layer.label)}</span>
                 {layer.enabled ? (
                   <Eye className="size-3.5 text-primary" />
                 ) : (
@@ -38,7 +41,7 @@ export function LeftPanel() {
               </button>
               <div className={cn("mt-2.5 transition-opacity", layer.enabled ? "opacity-100" : "opacity-40 pointer-events-none")}>
                 <div className="flex items-center justify-between text-[10px] text-muted">
-                  <span>Opacity</span>
+                  <span>{t("Opacity")}</span>
                   <span className="tabular">{layer.opacity}%</span>
                 </div>
                 <input
@@ -56,7 +59,7 @@ export function LeftPanel() {
       </section>
 
       <section>
-        <SectionTitle>Magnification</SectionTitle>
+        <SectionTitle>{t("Magnification")}</SectionTitle>
         <div className="grid grid-cols-4 gap-1.5">
           {MAG_PRESETS.map((m) => (
             <div
@@ -67,10 +70,7 @@ export function LeftPanel() {
             </div>
           ))}
         </div>
-        <p className="mt-2 text-[10px] leading-relaxed text-muted">
-          Scroll to zoom · drag to pan · double-click to zoom in. Use the navigator (top-left) to
-          jump across the slide.
-        </p>
+        <p className="mt-2 text-[10px] leading-relaxed text-muted">{t("Scroll to zoom · drag to pan · double-click to zoom in. Use the navigator (top-left) to jump across the slide.")}</p>
       </section>
     </aside>
   );

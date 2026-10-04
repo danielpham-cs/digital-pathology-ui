@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 import { motion } from "motion/react";
 import {
   AlertTriangle,
@@ -26,6 +28,7 @@ import { cn } from "@/lib/utils";
 import type { QCCheck, GuidelineReference } from "@/lib/mock-data";
 
 export function RightPanel() {
+  const { t } = useI18n();
   const status = useStore((s) => s.status);
 
   return (
@@ -34,8 +37,8 @@ export function RightPanel() {
       {status === "running" && (
         <Card>
           <CardHeader>
-            <CardTitle>Workflow</CardTitle>
-            <Badge variant="primary">Running</Badge>
+            <CardTitle>{t("Workflow")}</CardTitle>
+            <Badge variant="primary">{t("Running")}</Badge>
           </CardHeader>
           <CardContent>
             <WorkflowDAG />
@@ -48,6 +51,7 @@ export function RightPanel() {
 }
 
 function IdleState() {
+  const { t } = useI18n();
   const runAnalysis = useStore((s) => s.runAnalysis);
   return (
     <div className="space-y-3">
@@ -55,18 +59,13 @@ function IdleState() {
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Microscope className="size-6" />
         </div>
-        <h3 className="mt-3 text-sm font-semibold">Ready to analyze</h3>
-        <p className="mt-1 max-w-[260px] text-xs leading-relaxed text-muted">
-          The pipeline below runs deterministic models as a DAG — each node is a dedicated tool, not
-          a free-form agent.
-        </p>
-        <Button size="sm" className="mt-3" onClick={runAnalysis}>
-          Run analysis
-        </Button>
+        <h3 className="mt-3 text-sm font-semibold">{t("Ready to analyze")}</h3>
+        <p className="mt-1 max-w-[260px] text-xs leading-relaxed text-muted">{t("The pipeline below runs deterministic models as a DAG — each node is a dedicated tool, not a free-form agent.")}</p>
+        <Button size="sm" className="mt-3" onClick={runAnalysis}>{t("Run analysis")}</Button>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Planned workflow</CardTitle>
+          <CardTitle>{t("Planned workflow")}</CardTitle>
           <Badge variant="outline">DAG</Badge>
         </CardHeader>
         <CardContent>
@@ -78,7 +77,10 @@ function IdleState() {
 }
 
 function Results() {
+  const { t } = useI18n();
   const data = useStore((s) => s.caseData);
+  const rounds = useStore((s) => s.refineRounds);
+  const refineText = rounds > 0 ? ` · ${t("Model updated")} ×${rounds}` : "";
 
   return (
     <motion.div
@@ -92,11 +94,9 @@ function Results() {
         <CardContent className="pt-4">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-[11px] font-medium uppercase tracking-wide text-muted">
-                Primary diagnosis
-              </div>
+              <div className="text-[11px] font-medium uppercase tracking-wide text-muted">{t("Primary diagnosis")}</div>
               <div className="mt-1 text-base font-semibold leading-snug">
-                {data.diagnosis.label}
+                {t(data.diagnosis.label)}
               </div>
             </div>
             <SeverityBadge severity={data.diagnosis.severity} />
@@ -110,18 +110,18 @@ function Results() {
 
       <Tabs defaultValue="tissue">
         <TabsList>
-          <TabsTrigger value="tissue">Tissue</TabsTrigger>
-          <TabsTrigger value="cells">Cells</TabsTrigger>
-          <TabsTrigger value="staging">Staging</TabsTrigger>
-          <TabsTrigger value="survival">Survival</TabsTrigger>
-          <TabsTrigger value="qc">QC</TabsTrigger>
+          <TabsTrigger value="tissue">{t("Tissue")}</TabsTrigger>
+          <TabsTrigger value="cells">{t("Cells")}</TabsTrigger>
+          <TabsTrigger value="staging">{t("Staging")}</TabsTrigger>
+          <TabsTrigger value="survival">{t("Survival")}</TabsTrigger>
+          <TabsTrigger value="qc">{t("QC")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tissue" className="mt-3">
           <Card>
             <CardHeader>
-              <CardTitle>Tissue composition</CardTitle>
-              <Badge variant="outline">Segmentation</Badge>
+              <CardTitle>{t("Tissue composition")}</CardTitle>
+              <Badge variant="outline">{t("Segmentation")}</Badge>
             </CardHeader>
             <CardContent>
               <TissueDonut data={data.tissue} />
@@ -132,13 +132,13 @@ function Results() {
         <TabsContent value="cells" className="mt-3">
           <Card>
             <CardHeader>
-              <CardTitle>Cell detection</CardTitle>
+              <CardTitle>{t("Cell detection")}</CardTitle>
               <Badge variant="outline">HoVer-Net</Badge>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
-                <Stat label="Total cells" value={data.cells.total.toLocaleString()} />
-                <Stat label="Density" value={`${data.cells.densityPerMm2.toLocaleString()} /mm²`} />
+                <Stat label={t("Total cells")} value={data.cells.total.toLocaleString()} />
+                <Stat label={t("Density")} value={`${data.cells.densityPerMm2.toLocaleString()} /mm²`} />
               </div>
               <CellBars data={data.cells.types} />
             </CardContent>
@@ -148,13 +148,13 @@ function Results() {
         <TabsContent value="staging" className="mt-3">
           <Card>
             <CardHeader>
-              <CardTitle>Tumor staging</CardTitle>
+              <CardTitle>{t("Tumor staging")}</CardTitle>
               <Badge variant="outline">MIL</Badge>
             </CardHeader>
             <CardContent className="space-y-4">
               <StageStepper stage={data.staging.stage} />
               <ConfidenceRow value={data.staging.confidence} />
-              <p className="text-xs leading-relaxed text-muted">{data.staging.note}</p>
+              <p className="text-xs leading-relaxed text-muted">{t(data.staging.note.split(" · refined ×")[0])}{refineText}</p>
               <GuidelineCard guideline={data.staging.guideline} />
               <RefineControl />
             </CardContent>
@@ -164,13 +164,13 @@ function Results() {
         <TabsContent value="survival" className="mt-3">
           <Card>
             <CardHeader>
-              <CardTitle>Survival analysis</CardTitle>
+              <CardTitle>{t("Survival analysis")}</CardTitle>
               <RiskBadge risk={data.survival.risk} />
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <Stat label="Risk group" value={data.survival.risk} icon={<TrendingDown className="size-3.5" />} />
-                <Stat label="Median survival" value={`${data.survival.medianMonths} mo`} />
+                <Stat label={t("Risk group")} value={t(data.survival.risk)} icon={<TrendingDown className="size-3.5" />} />
+                <Stat label={t("Median survival")} value={`${data.survival.medianMonths} ${t("mo")}`} />
               </div>
               <SurvivalCurve data={data.survival.curve} median={data.survival.medianMonths} />
             </CardContent>
@@ -180,15 +180,14 @@ function Results() {
         <TabsContent value="qc" className="mt-3">
           <Card>
             <CardHeader>
-              <CardTitle>Quality control</CardTitle>
+              <CardTitle>{t("Quality control")}</CardTitle>
               {data.qc.ood ? (
                 <Badge variant="warning">
                   <CircleAlert className="size-3" /> OOD
                 </Badge>
               ) : (
                 <Badge variant="success">
-                  <ShieldCheck className="size-3" /> In-distribution
-                </Badge>
+                  <ShieldCheck className="size-3" />{t("In-distribution")}</Badge>
               )}
             </CardHeader>
             <CardContent className="space-y-2">
@@ -203,13 +202,13 @@ function Results() {
       {/* AI narrative */}
       <Card>
         <CardHeader>
-          <CardTitle>AI-generated summary</CardTitle>
+          <CardTitle>{t("AI-generated summary")}</CardTitle>
           <Badge variant="primary">
             <Activity className="size-3" /> LLM
           </Badge>
         </CardHeader>
         <CardContent>
-          <p className="text-xs leading-relaxed text-muted">{data.narrative}</p>
+          <p className="text-xs leading-relaxed text-muted">{t(data.narrative)}</p>
         </CardContent>
       </Card>
     </motion.div>
@@ -217,11 +216,12 @@ function Results() {
 }
 
 function ConfidenceRow({ value }: { value: number }) {
+  const { t } = useI18n();
   const pct = Math.round(value * 100);
   return (
     <div className="mt-3">
       <div className="flex items-center justify-between text-[11px]">
-        <span className="text-muted">Model confidence</span>
+        <span className="text-muted">{t("Model confidence")}</span>
         <span className="font-semibold tabular">{pct}%</span>
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
@@ -247,28 +247,27 @@ function Stat({ label, value, icon }: { label: string; value: string; icon?: Rea
 }
 
 function SeverityBadge({ severity }: { severity: "benign" | "malignant" | "uncertain" }) {
+  const { t } = useI18n();
   if (severity === "malignant")
     return (
       <Badge variant="danger">
-        <AlertTriangle className="size-3" /> Malignant
-      </Badge>
+        <AlertTriangle className="size-3" />{t("Malignant")}</Badge>
     );
   if (severity === "benign")
     return (
       <Badge variant="success">
-        <CheckCircle2 className="size-3" /> Benign
-      </Badge>
+        <CheckCircle2 className="size-3" />{t("Benign")}</Badge>
     );
   return (
     <Badge variant="warning">
-      <CircleAlert className="size-3" /> Uncertain
-    </Badge>
+      <CircleAlert className="size-3" />{t("Uncertain")}</Badge>
   );
 }
 
 function RiskBadge({ risk }: { risk: "Low" | "Intermediate" | "High" }) {
+  const { t } = useI18n();
   const variant = risk === "High" ? "danger" : risk === "Low" ? "success" : "warning";
-  return <Badge variant={variant as "danger" | "success" | "warning"}>{risk} risk</Badge>;
+  return <Badge variant={variant as "danger" | "success" | "warning"}>{t(risk)} {t("risk")}</Badge>;
 }
 
 function StageStepper({ stage }: { stage: "T1" | "T2" | "T3" | "T4" }) {
@@ -305,6 +304,7 @@ function StageStepper({ stage }: { stage: "T1" | "T2" | "T3" | "T4" }) {
 }
 
 function QCRow({ check }: { check: QCCheck }) {
+  const { t } = useI18n();
   const map = {
     pass: { icon: <CheckCircle2 className="size-4 text-success" />, },
     warn: { icon: <CircleAlert className="size-4 text-warning" /> },
@@ -314,21 +314,23 @@ function QCRow({ check }: { check: QCCheck }) {
     <div className="flex items-start gap-2.5 rounded-md border border-border p-2.5">
       {map[check.status].icon}
       <div className="flex-1">
-        <div className="text-xs font-medium">{check.label}</div>
-        <div className="text-[11px] text-muted">{check.detail}</div>
+        <div className="text-xs font-medium">{t(check.label)}</div>
+        <div className="text-[11px] text-muted">{t(check.detail)}</div>
       </div>
     </div>
   );
 }
 
 function FeedbackBar() {
+  const { t } = useI18n();
   const vote = useStore((s) => s.diagnosisVote);
   const setVote = useStore((s) => s.setVote);
   return (
     <div className="mt-3 flex items-center gap-2 border-t border-border pt-2.5">
-      <span className="text-[11px] text-muted">Agree with this result?</span>
+      <span className="text-[11px] text-muted">{t("Agree with this result?")}</span>
       <div className="ml-auto flex gap-1">
         <button
+          aria-label={t("Agree with this result?")}
           onClick={() => setVote("up")}
           className={cn(
             "flex h-7 w-7 items-center justify-center rounded-md border transition-colors cursor-pointer",
@@ -340,6 +342,7 @@ function FeedbackBar() {
           <ThumbsUp className="size-3.5" />
         </button>
         <button
+          aria-label={t("Disagree")}
           onClick={() => setVote("down")}
           className={cn(
             "flex h-7 w-7 items-center justify-center rounded-md border transition-colors cursor-pointer",
@@ -356,13 +359,12 @@ function FeedbackBar() {
 }
 
 function GuidelineCard({ guideline }: { guideline: GuidelineReference }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-[var(--radius)] border border-border bg-surface-muted/50 p-3">
       <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
-        <BookOpen className="size-3.5 text-primary" />
-        Clinical guideline
-      </div>
-      <div className="mb-2 text-[11px] font-medium text-muted">{guideline.system}</div>
+        <BookOpen className="size-3.5 text-primary" />{t("Clinical guideline")}</div>
+      <div className="mb-2 text-[11px] font-medium text-muted">{t(guideline.system)}</div>
       <div className="space-y-1">
         {guideline.criteria.map((c) => {
           const matched = c.stage === guideline.matched;
@@ -377,18 +379,19 @@ function GuidelineCard({ guideline }: { guideline: GuidelineReference }) {
               <span className={cn("font-semibold tabular", matched && "text-primary")}>
                 {c.stage}
               </span>
-              <span className="flex-1">{c.rule}</span>
+              <span className="flex-1">{t(c.rule)}</span>
               {matched && <CheckCircle2 className="size-3.5 shrink-0 text-primary" />}
             </div>
           );
         })}
       </div>
-      <p className="mt-2 text-[11px] leading-relaxed text-muted">{guideline.rationale}</p>
+      <p className="mt-2 text-[11px] leading-relaxed text-muted">{t(guideline.rationale)}</p>
     </div>
   );
 }
 
 function RefineControl() {
+  const { t } = useI18n();
   const refine = useStore((s) => s.refineStaging);
   const rounds = useStore((s) => s.refineRounds);
   return (
@@ -396,27 +399,26 @@ function RefineControl() {
       <div className="flex items-center gap-2">
         <Sparkles className="size-4 text-primary" />
         <div className="leading-tight">
-          <div className="text-[11px] font-medium">Refine with feedback</div>
+          <div className="text-[11px] font-medium">{t("Refine with feedback")}</div>
           <div className="text-[10px] text-muted">
-            {rounds > 0 ? `Model updated ×${rounds}` : "Active learning · updates in seconds"}
+            {rounds > 0 ? `${t("Model updated")} ×${rounds}` : t("Active learning · updates in seconds")}
           </div>
         </div>
       </div>
-      <Button variant="subtle" size="sm" onClick={refine}>
-        Refine
-      </Button>
+      <Button variant="subtle" size="sm" onClick={refine}>{t("Refine")}</Button>
     </div>
   );
 }
 
 function OODBanner({ score }: { score: number }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-start gap-2.5 rounded-[var(--radius)] border border-warning/40 bg-warning/10 p-3">
       <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
       <div>
-        <div className="text-xs font-semibold text-[color:#b45309]">Out-of-distribution slide</div>
+        <div className="text-xs font-semibold text-[color:#b45309]">{t("Out-of-distribution slide")}</div>
         <div className="text-[11px] text-[color:#b45309]/80">
-          OOD score {score.toFixed(2)} — results may be unreliable. Pathologist review recommended.
+          {t("OOD score")} {score.toFixed(2)} — {t("results may be unreliable. Pathologist review recommended.")}
         </div>
       </div>
     </div>

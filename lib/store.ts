@@ -1,3 +1,4 @@
+import type { Locale } from "./translations";
 import { create } from "zustand";
 import { MOCK_CASE, PIPELINE_STEPS, type CaseData } from "./mock-data";
 import { respond, type ChatMessage } from "./assistant";
@@ -44,7 +45,7 @@ interface ViewerState {
   chatMessages: ChatMessage[];
   chatThinking: boolean;
   toggleChat: () => void;
-  sendChat: (text: string) => void;
+  sendChat: (text: string, locale: Locale) => void;
 }
 
 export const useStore = create<ViewerState>((set, get) => ({
@@ -129,17 +130,18 @@ export const useStore = create<ViewerState>((set, get) => ({
   chatMessages: [],
   chatThinking: false,
   toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
-  sendChat: (text) => {
+  sendChat: (text, locale) => {
     const t = text.trim();
     if (!t) return;
     set((s) => ({
       chatMessages: [...s.chatMessages, { role: "user", content: t }],
       chatThinking: true,
     }));
+    const caseSnapshot = get().caseData;
     setTimeout(() => {
-      const reply = respond(t, get().caseData);
+      const reply = respond(t, caseSnapshot, locale);
       set((s) => ({
-        chatMessages: [...s.chatMessages, { role: "assistant", ...reply }],
+        chatMessages: [...s.chatMessages, { role: "assistant", ...reply, question: t, caseSnapshot }],
         chatThinking: false,
       }));
     }, 550);

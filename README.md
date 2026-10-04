@@ -32,6 +32,16 @@ Built for a hackathon demo — the entire app runs **offline on mock data** with
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · OpenSeadragon · Recharts ·
 Motion · Zustand · lucide-react. UI primitives are hand-rolled in `components/ui/`.
 
+## Language / 語言
+
+Use the top-right **中文 / English** switch to change the entire workspace.
+Traditional Chinese is the default; the selected language is saved locally and retained after reload.
+UI labels, mock case descriptions, charts, clinical guidelines, workflow nodes, and assistant replies follow the selected language. The demo assistant accepts both Chinese and English questions. Existing assistant replies switch language while preserving the original user messages and the result snapshot used for each answer.
+
+使用右上角 **中文 / English** 切換整個工作台的語言，預設為繁體中文。
+選擇會儲存在本機；重新載入後仍會保留。切換不會重設分析進度、圖層設定或對話。
+翻譯集中於 `lib/translations.ts`，語言狀態由 `lib/i18n.ts` 管理。模型名稱、病例識別碼與標準單位保持原樣。
+
 ## Getting started
 
 ```bash

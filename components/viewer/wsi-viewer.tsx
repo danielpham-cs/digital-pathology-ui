@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 import * as React from "react";
 import { createPortal } from "react-dom";
 import OpenSeadragon from "openseadragon";
@@ -11,10 +13,11 @@ const IMG_H = 1600;
 const BASE_MAG = 40; // the synthetic slide represents a 40x scan
 
 export function WSIViewer() {
+  const { t } = useI18n();
   const ref = React.useRef<HTMLDivElement>(null);
   const osdRef = React.useRef<OpenSeadragon.Viewer | null>(null);
   const [regions, setRegions] = React.useState<SlideRegions | null>(null);
-  const [ready, setReady] = React.useState(false);
+  const [viewerInstance, setViewerInstance] = React.useState<OpenSeadragon.Viewer | null>(null);
   const setViewport = useStore((s) => s.setViewport);
   const layers = useStore((s) => s.layers);
   const status = useStore((s) => s.status);
@@ -52,7 +55,7 @@ export function WSIViewer() {
       setViewport({ zoom, magnification: imgZoom * BASE_MAG });
     };
     viewer.addHandler("open", () => {
-      setReady(true);
+      setViewerInstance(viewer);
       report();
     });
     viewer.addHandler("zoom", report);
@@ -88,8 +91,8 @@ export function WSIViewer() {
       <div ref={ref} className="h-full w-full" />
 
       {/* SVG overlays aligned to the image via OSD overlay div */}
-      {ready && regions && (
-        <OverlayMount osd={osdRef.current!} aspect={aspect}>
+      {viewerInstance && regions && (
+        <OverlayMount osd={viewerInstance} aspect={aspect}>
           <svg
             viewBox={`0 0 ${IMG_W} ${IMG_H}`}
             width="100%"
@@ -163,9 +166,7 @@ export function WSIViewer() {
 
       {status === "running" && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="rounded-full bg-black/55 px-4 py-1.5 text-xs font-medium text-white backdrop-blur">
-            Analyzing slide…
-          </div>
+          <div className="rounded-full bg-black/55 px-4 py-1.5 text-xs font-medium text-white backdrop-blur">{t("Analyzing slide…")}</div>
         </div>
       )}
     </div>
