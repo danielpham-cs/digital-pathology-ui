@@ -1,3 +1,5 @@
+import type { SlideRegions } from "./synthetic-slide";
+import type { Locale } from "./translations";
 import { create } from "zustand";
 import { MOCK_CASE, PIPELINE_STEPS, type CaseData } from "./mock-data";
 import { respond, type ChatMessage } from "./assistant";
@@ -19,6 +21,14 @@ interface ViewerState {
   magnification: number;
   pointer: { x: number; y: number } | null;
   setViewport: (v: Partial<Pick<ViewerState, "zoom" | "magnification" | "pointer">>) => void;
+
+  regions: SlideRegions["tumor"];
+  setRegions: (regions: SlideRegions["tumor"]) => void;
+  selectedRegion: number | null;
+  focusRequest: number;
+  selectRegion: (index: number | null) => void;
+  viewMode: "original" | "suspicious";
+  setViewMode: (mode: "original" | "suspicious") => void;
 
   // layers
   layers: Layer[];
@@ -44,7 +54,7 @@ interface ViewerState {
   chatMessages: ChatMessage[];
   chatThinking: boolean;
   toggleChat: () => void;
-  sendChat: (text: string) => void;
+  sendChat: (text: string, locale: Locale) => void;
 }
 
 export const useStore = create<ViewerState>((set, get) => ({
@@ -52,6 +62,20 @@ export const useStore = create<ViewerState>((set, get) => ({
   magnification: 1,
   pointer: null,
   setViewport: (v) => set(v),
+
+  regions: [],
+  setRegions: (regions) => set({ regions }),
+  selectedRegion: null,
+  focusRequest: 0,
+  selectRegion: (index) => {
+    if (index !== null && (get().status !== "done" || !get().regions[index])) return;
+    set((state) => ({ selectedRegion: index, focusRequest: state.focusRequest + 1 }));
+  },
+  viewMode: "original",
+  setViewMode: (viewMode) => {
+    if (viewMode === "suspicious" && get().status !== "done") return;
+    set({ viewMode });
+  },
 
   layers: [
     { id: "tissue", label: "Tissue mask", enabled: true, opacity: 40, color: "var(--danger)" },
@@ -74,7 +98,7 @@ export const useStore = create<ViewerState>((set, get) => ({
 
   runAnalysis: () => {
     if (get().status === "running") return;
-    set({ status: "running", activeStep: 0, stepProgress: 0 });
+    set({ status: "running", selectedRegion: null, viewMode: "original", activeStep: 0, stepProgress: 0 });
 
     const total = PIPELINE_STEPS.length;
     const tick = () => {
@@ -83,7 +107,7 @@ export const useStore = create<ViewerState>((set, get) => ({
       const next = stepProgress + 10 + Math.floor(Math.random() * 18);
       if (next >= 100) {
         if (activeStep + 1 >= total) {
-          set({ status: "done", activeStep: total, stepProgress: 100 });
+          set({ status: "done", viewMode: "suspicious", activeStep: total, stepProgress: 100 });
           return;
         }
         set({ activeStep: activeStep + 1, stepProgress: 0 });
@@ -98,6 +122,8 @@ export const useStore = create<ViewerState>((set, get) => ({
   resetAnalysis: () =>
     set({
       status: "idle",
+      selectedRegion: null,
+      viewMode: "original",
       activeStep: -1,
       stepProgress: 0,
       diagnosisVote: null,
@@ -129,17 +155,18 @@ export const useStore = create<ViewerState>((set, get) => ({
   chatMessages: [],
   chatThinking: false,
   toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
-  sendChat: (text) => {
+  sendChat: (text, locale) => {
     const t = text.trim();
     if (!t) return;
     set((s) => ({
       chatMessages: [...s.chatMessages, { role: "user", content: t }],
       chatThinking: true,
     }));
+    const caseSnapshot = get().caseData;
     setTimeout(() => {
-      const reply = respond(t, get().caseData);
+      const reply = respond(t, caseSnapshot, locale);
       set((s) => ({
-        chatMessages: [...s.chatMessages, { role: "assistant", ...reply }],
+        chatMessages: [...s.chatMessages, { role: "assistant", ...reply, question: t, caseSnapshot }],
         chatThinking: false,
       }));
     }, 550);

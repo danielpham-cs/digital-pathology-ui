@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 import { Check, Loader2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import {
@@ -21,6 +23,7 @@ function nodeState(node: DagNode, activeStep: number, status: string): NodeState
 }
 
 export function WorkflowDAG() {
+  const { t } = useI18n();
   const activeStep = useStore((s) => s.activeStep);
   const status = useStore((s) => s.status);
   const stepProgress = useStore((s) => s.stepProgress);
@@ -101,7 +104,7 @@ export function WorkflowDAG() {
                   st === "pending" ? "text-muted" : "text-foreground"
                 )}
               >
-                {n.label}
+                {t(n.label)}
               </div>
               <div className="truncate font-mono text-[9px] text-muted">{n.tool}</div>
             </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 import {
   PieChart,
   Pie,
@@ -29,9 +31,10 @@ const TISSUE_LABELS: Record<keyof TissueComposition, string> = {
 };
 
 export function TissueDonut({ data }: { data: TissueComposition }) {
+  const { t } = useI18n();
   const entries = (Object.keys(data) as (keyof TissueComposition)[]).map((k) => ({
     key: k,
-    name: TISSUE_LABELS[k],
+    name: t(TISSUE_LABELS[k]),
     value: data[k],
     color: TISSUE_COLORS[k],
   }));
@@ -56,7 +59,7 @@ export function TissueDonut({ data }: { data: TissueComposition }) {
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-lg font-semibold tabular">{data.tumor}%</span>
-          <span className="text-[10px] text-muted">tumor</span>
+          <span className="text-[10px] text-muted">{t("tumor")}</span>
         </div>
       </div>
       <div className="flex-1 space-y-1.5">
@@ -73,14 +76,15 @@ export function TissueDonut({ data }: { data: TissueComposition }) {
 }
 
 export function CellBars({ data }: { data: CellType[] }) {
+  const { t, locale } = useI18n();
   const max = Math.max(...data.map((d) => d.count));
   return (
     <div className="space-y-2.5">
       {data.map((c) => (
-        <div key={c.name} className="space-y-1">
+        <div key={t(c.name)} className="space-y-1">
           <div className="flex justify-between text-xs">
-            <span className="text-muted">{c.name}</span>
-            <span className="font-medium tabular">{c.count.toLocaleString()}</span>
+            <span className="text-muted">{t(c.name)}</span>
+            <span className="font-medium tabular">{c.count.toLocaleString(locale)}</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
             <div
@@ -94,7 +98,8 @@ export function CellBars({ data }: { data: CellType[] }) {
   );
 }
 
-export function SurvivalCurve({ data, median }: { data: SurvivalPoint[]; median: number }) {
+export function SurvivalCurve({ data }: { data: SurvivalPoint[]; median: number }) {
+  const { t } = useI18n();
   return (
     <div className="h-40 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -111,7 +116,7 @@ export function SurvivalCurve({ data, median }: { data: SurvivalPoint[]; median:
             tick={{ fontSize: 10, fill: "var(--muted)" }}
             tickLine={false}
             axisLine={{ stroke: "var(--border)" }}
-            unit="m"
+            unit={t("m")}
           />
           <YAxis
             domain={[0, 1]}
@@ -127,8 +132,8 @@ export function SurvivalCurve({ data, median }: { data: SurvivalPoint[]; median:
               border: "1px solid var(--border)",
               fontSize: 12,
             }}
-            formatter={(v) => [`${Math.round(Number(v) * 100)}%`, "Survival"]}
-            labelFormatter={(l) => `Month ${l}`}
+            formatter={(v) => [`${Math.round(Number(v) * 100)}%`, t("Survival")]}
+            labelFormatter={(l) => `${t("Month")} ${l}`}
           />
           <Area
             type="monotone"

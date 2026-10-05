@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 import * as React from "react";
 import { createPortal } from "react-dom";
 import OpenSeadragon from "openseadragon";
@@ -12,12 +14,18 @@ const IMG_H = 1600;
 const BASE_MAG = 40; // the synthetic slide represents a 40x scan
 
 export function WSIViewer() {
+  const { t } = useI18n();
   const ref = React.useRef<HTMLDivElement>(null);
   const osdRef = React.useRef<OpenSeadragon.Viewer | null>(null);
   const [regions, setRegions] = React.useState<SlideRegions | null>(null);
-  const [ready, setReady] = React.useState(false);
+  const [viewerInstance, setViewerInstance] = React.useState<OpenSeadragon.Viewer | null>(null);
   const setViewport = useStore((s) => s.setViewport);
+  const setRegionList = useStore((s) => s.setRegions);
+  const selectedRegion = useStore((s) => s.selectedRegion);
+  const selectRegion = useStore((s) => s.selectRegion);
+  const focusRequest = useStore((s) => s.focusRequest);
   const layers = useStore((s) => s.layers);
+  const viewMode = useStore((s) => s.viewMode);
   const status = useStore((s) => s.status);
 
   // init viewer once
@@ -25,6 +33,7 @@ export function WSIViewer() {
     if (!ref.current || osdRef.current) return;
     const { dataUrl, regions } = generateSyntheticSlide(IMG_W, IMG_H);
     setRegions(regions);
+    setRegionList(regions.tumor);
 
     const viewer = OpenSeadragon({
       element: ref.current,
@@ -47,6 +56,16 @@ export function WSIViewer() {
       crossOriginPolicy: "Anonymous",
     });
     osdRef.current = viewer;
+    // Let OpenSeadragon distinguish clicks from drags; overlays do not intercept panning.
+    viewer.addHandler("canvas-click", (event) => {
+      const state = useStore.getState();
+      if (!event.quick || state.status !== "done" || state.viewMode !== "suspicious") return;
+      const point = viewer.viewport.viewportToImageCoordinates(viewer.viewport.pointFromPixel(event.position));
+      const hits = regions.tumor.map((region, index) => ({ region, index }))
+        .filter(({ region }) => Math.hypot(point.x - region.x * IMG_W, point.y - region.y * IMG_H) <= region.r * IMG_W)
+        .sort((a, b) => a.region.r - b.region.r);
+      if (hits.length) state.selectRegion(hits[0].index);
+    });
 
     const report = () => {
       const zoom = viewer.viewport.getZoom(true);
@@ -54,7 +73,7 @@ export function WSIViewer() {
       setViewport({ zoom, magnification: imgZoom * BASE_MAG });
     };
     viewer.addHandler("open", () => {
-      setReady(true);
+      setViewerInstance(viewer);
       report();
     });
     viewer.addHandler("zoom", report);
@@ -81,7 +100,26 @@ export function WSIViewer() {
       viewer.destroy();
       osdRef.current = null;
     };
-  }, [setViewport]);
+  }, [setViewport, setRegionList]);
+
+  React.useEffect(() => {
+    if (!viewerInstance || !regions || !focusRequest) return;
+    if (selectedRegion === null) {
+      viewerInstance.viewport.goHome();
+      return;
+    }
+    const region = regions.tumor[selectedRegion];
+    if (!region || status !== "done") return;
+    // The generator stores radius relative to image width; use image coordinates
+    // then convert through the tiled image to avoid distorting non-square slides.
+    const radius = region.r * IMG_W * 1.2;
+    const left = Math.max(0, region.x * IMG_W - radius);
+    const top = Math.max(0, region.y * IMG_H - radius);
+    const right = Math.min(IMG_W, region.x * IMG_W + radius);
+    const bottom = Math.min(IMG_H, region.y * IMG_H + radius);
+    const bounds = viewerInstance.world.getItemAt(0).imageToViewportRectangle(left, top, right - left, bottom - top);
+    viewerInstance.viewport.fitBounds(bounds);
+  }, [viewerInstance, regions, selectedRegion, focusRequest, status]);
 
   const aspect = IMG_H / IMG_W; // viewport height for normalized width=1
 
@@ -114,14 +152,22 @@ export function WSIViewer() {
       />
 
       {/* SVG overlays aligned to the image via OSD overlay div */}
-      {ready && regions && (
-        <OverlayMount osd={osdRef.current!} aspect={aspect}>
+      {viewerInstance && regions && status === "done" && viewMode === "suspicious" && (
+        <OverlayMount osd={viewerInstance} aspect={aspect}>
           <svg
             viewBox={`0 0 ${IMG_W} ${IMG_H}`}
             width="100%"
             height="100%"
             style={{ display: "block", overflow: "visible" }}
           >
+            <g data-testid="suspicious-regions" aria-label={t("Suspected malignant regions")}>
+              {regions.tumor.map((region, i) => (
+                <g key={i}>
+                  <circle cx={region.x * IMG_W} cy={region.y * IMG_H} r={region.r * IMG_W} fill="var(--danger)" fillOpacity={selectedRegion === i ? 0.22 : 0.12} stroke={selectedRegion === i ? "#facc15" : "#ff5252"} strokeWidth={selectedRegion === i ? 5 : 3} vectorEffect="non-scaling-stroke" />
+                  <text x={region.x * IMG_W} y={region.y * IMG_H} textAnchor="middle" fill="white" stroke="#7f1d1d" strokeWidth={3} paintOrder="stroke" fontSize={40} fontWeight={600}>{t("Region")} {i + 1}</text>
+                </g>
+              ))}
+            </g>
             {layers.map((layer) => {
               if (!layer.enabled) return null;
               const op = layer.opacity / 100;
@@ -199,11 +245,24 @@ export function WSIViewer() {
         </OverlayMount>
       )}
 
+      {status === "done" && viewMode === "suspicious" && (
+        <div className="pointer-events-none absolute right-3 top-3 max-w-[230px] rounded-lg bg-black/70 px-3 py-2 text-[11px] text-white">
+          <div className="flex items-center gap-2 font-medium"><span className="h-2 w-2 rounded-full bg-red-500" />{t("Suspected malignant regions")}</div>
+          <p className="mt-1 text-white/70">{t("Demo regions from the synthetic slide; not actual model evidence.")}</p>
+        </div>
+      )}
+
+      {status === "done" && selectedRegion !== null && (
+        <button type="button" onClick={() => selectRegion(null)} className="absolute bottom-14 right-3 rounded-lg bg-black/75 px-3 py-2 text-xs text-white cursor-pointer hover:bg-black">
+          {t("Back to full slide")}
+        </button>
+      )}
+
       {/* scale bar */}
       <ScaleBar />
 
       {/* floating glass control bar */}
-      {ready && (
+      {viewerInstance && (
         <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/15 glass-dark px-1.5 py-1.5 text-white shadow-lg">
           <CtrlButton onClick={() => zoomBy(1.4)} label="Zoom in">
             <Plus className="size-4" />

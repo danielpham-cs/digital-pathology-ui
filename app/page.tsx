@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { PixelLogo } from "@/components/shell/pixel-logo";
+import { LanguageSwitcher } from "@/components/shell/language-switcher";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -80,6 +81,7 @@ export default function LandingPage() {
             <a href="#principle" className="transition-colors hover:text-foreground">Principle</a>
           </nav>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher className="mr-1" />
             <Button variant="outline" size="sm">
               <Code2 /> GitHub
             </Button>

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { LayoutDashboard, ScanSearch, HardDrive, Settings } from "lucide-react";
 import { PixelLogo } from "./pixel-logo";
+import { LanguageSwitcher } from "./language-switcher";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -11,6 +13,7 @@ const NAV = [
 ];
 
 export function Sidebar({ active }: { active: string }) {
+  const { t } = useI18n();
   return (
     <nav className="glass z-30 flex w-[228px] shrink-0 flex-col border-r border-border">
       {/* brand → home */}
@@ -27,7 +30,7 @@ export function Sidebar({ active }: { active: string }) {
       {/* nav */}
       <div className="flex-1 px-3 py-2">
         <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
-          Workspace
+          {t("Workspace")}
         </div>
         <div className="space-y-0.5">
           {NAV.map((item) => {
@@ -45,18 +48,26 @@ export function Sidebar({ active }: { active: string }) {
                 )}
               >
                 <Icon className={cn("size-4", isActive && "text-primary")} />
-                {item.label}
+                {t(item.label)}
               </Link>
             );
           })}
         </div>
       </div>
 
+      {/* language */}
+      <div className="mx-3 mb-2 flex items-center justify-between">
+        <span className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
+          {t("Language")}
+        </span>
+        <LanguageSwitcher />
+      </div>
+
       {/* cloud storage widget */}
       <div className="mx-3 mb-3 rounded-xl border border-border bg-surface/50 p-3">
         <div className="mb-2 flex items-center gap-2 text-[11px] font-medium text-muted">
           <HardDrive className="size-3.5" />
-          Cloud Storage
+          {t("Cloud Storage")}
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
           <div className="h-full w-[38%] rounded-full brand-gradient" />
