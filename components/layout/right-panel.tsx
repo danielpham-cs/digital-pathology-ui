@@ -22,14 +22,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TissueDonut, CellBars, SurvivalCurve } from "@/components/analysis/charts";
 import { WorkflowDAG } from "@/components/analysis/workflow-dag";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import { cn } from "@/lib/utils";
 import type { QCCheck, GuidelineReference } from "@/lib/mock-data";
 
-export function RightPanel() {
+export function AnalysisContent() {
   const status = useStore((s) => s.status);
 
   return (
-    <aside className="flex w-[380px] shrink-0 flex-col overflow-y-auto border-l border-border bg-background p-4 panel-scroll">
+    <div className="space-y-3">
       {status === "idle" && <IdleState />}
       {status === "running" && (
         <Card>
@@ -43,7 +44,7 @@ export function RightPanel() {
         </Card>
       )}
       {status === "done" && <Results />}
-    </aside>
+    </div>
   );
 }
 
@@ -82,32 +83,43 @@ function Results() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      initial="hidden"
+      animate="show"
+      variants={{ show: { transition: { staggerChildren: 0.07 } } }}
       className="space-y-3"
     >
-      {/* Diagnosis header card */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="text-[11px] font-medium uppercase tracking-wide text-muted">
-                Primary diagnosis
+      {/* Diagnosis hero card */}
+      <motion.div variants={fadeUp}>
+        <div className="overflow-hidden rounded-[var(--radius)] border border-border shadow-lg">
+          {/* bold gradient banner */}
+          <div className="relative brand-gradient overflow-hidden px-4 py-3.5 text-white">
+            <div className="absolute -right-6 -top-10 h-28 w-28 rounded-full bg-white/25 blur-2xl" />
+            <div className="absolute -bottom-10 left-10 h-24 w-24 rounded-full bg-brand-3/40 blur-2xl" />
+            <div className="relative flex items-start justify-between gap-3">
+              <div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-white/75">
+                  Primary diagnosis
+                </div>
+                <div className="mt-1 text-lg font-bold leading-snug">{data.diagnosis.label}</div>
               </div>
-              <div className="mt-1 text-base font-semibold leading-snug">
-                {data.diagnosis.label}
-              </div>
+              <HeroSeverity severity={data.diagnosis.severity} />
             </div>
-            <SeverityBadge severity={data.diagnosis.severity} />
           </div>
-          <ConfidenceRow value={data.diagnosis.confidence} />
-          <FeedbackBar />
-        </CardContent>
-      </Card>
+          {/* body */}
+          <div className="bg-surface/80 px-4 pb-4 pt-3 backdrop-blur">
+            <ConfidenceRow value={data.diagnosis.confidence} />
+            <FeedbackBar />
+          </div>
+        </div>
+      </motion.div>
 
-      {data.qc.ood && <OODBanner score={data.qc.oodScore} />}
+      {data.qc.ood && (
+        <motion.div variants={fadeUp}>
+          <OODBanner score={data.qc.oodScore} />
+        </motion.div>
+      )}
 
+      <motion.div variants={fadeUp}>
       <Tabs defaultValue="tissue">
         <TabsList>
           <TabsTrigger value="tissue">Tissue</TabsTrigger>
@@ -137,8 +149,11 @@ function Results() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
-                <Stat label="Total cells" value={data.cells.total.toLocaleString()} />
-                <Stat label="Density" value={`${data.cells.densityPerMm2.toLocaleString()} /mm²`} />
+                <Stat label="Total cells" value={<AnimatedNumber value={data.cells.total} />} />
+                <Stat
+                  label="Density"
+                  value={<AnimatedNumber value={data.cells.densityPerMm2} suffix=" /mm²" />}
+                />
               </div>
               <CellBars data={data.cells.types} />
             </CardContent>
@@ -170,7 +185,10 @@ function Results() {
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <Stat label="Risk group" value={data.survival.risk} icon={<TrendingDown className="size-3.5" />} />
-                <Stat label="Median survival" value={`${data.survival.medianMonths} mo`} />
+                <Stat
+                  label="Median survival"
+                  value={<AnimatedNumber value={data.survival.medianMonths} suffix=" mo" />}
+                />
               </div>
               <SurvivalCurve data={data.survival.curve} median={data.survival.medianMonths} />
             </CardContent>
@@ -199,22 +217,30 @@ function Results() {
           </Card>
         </TabsContent>
       </Tabs>
+      </motion.div>
 
       {/* AI narrative */}
-      <Card>
-        <CardHeader>
-          <CardTitle>AI-generated summary</CardTitle>
-          <Badge variant="primary">
-            <Activity className="size-3" /> LLM
-          </Badge>
-        </CardHeader>
-        <CardContent>
-          <p className="text-xs leading-relaxed text-muted">{data.narrative}</p>
-        </CardContent>
-      </Card>
+      <motion.div variants={fadeUp}>
+        <Card>
+          <CardHeader>
+            <CardTitle>AI-generated summary</CardTitle>
+            <Badge variant="primary">
+              <Activity className="size-3" /> LLM
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs leading-relaxed text-muted">{data.narrative}</p>
+          </CardContent>
+        </Card>
+      </motion.div>
     </motion.div>
   );
 }
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
+};
 
 function ConfidenceRow({ value }: { value: number }) {
   const pct = Math.round(value * 100);
@@ -222,21 +248,23 @@ function ConfidenceRow({ value }: { value: number }) {
     <div className="mt-3">
       <div className="flex items-center justify-between text-[11px]">
         <span className="text-muted">Model confidence</span>
-        <span className="font-semibold tabular">{pct}%</span>
+        <span className="gradient-text font-bold tabular">{pct}%</span>
       </div>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
-        <div
-          className="h-full rounded-full bg-primary"
-          style={{ width: `${pct}%` }}
+      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+        <motion.div
+          className="h-full rounded-full brand-gradient"
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         />
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) {
+function Stat({ label, value, icon }: { label: string; value: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <div className="rounded-[var(--radius)] border border-border bg-surface p-2.5">
+    <div className="card-hover rounded-[var(--radius)] border border-border bg-surface/60 p-2.5 shadow-sm">
       <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted">
         {icon}
         {label}
@@ -246,23 +274,18 @@ function Stat({ label, value, icon }: { label: string; value: string; icon?: Rea
   );
 }
 
-function SeverityBadge({ severity }: { severity: "benign" | "malignant" | "uncertain" }) {
-  if (severity === "malignant")
-    return (
-      <Badge variant="danger">
-        <AlertTriangle className="size-3" /> Malignant
-      </Badge>
-    );
-  if (severity === "benign")
-    return (
-      <Badge variant="success">
-        <CheckCircle2 className="size-3" /> Benign
-      </Badge>
-    );
+function HeroSeverity({ severity }: { severity: "benign" | "malignant" | "uncertain" }) {
+  const map = {
+    malignant: { icon: <AlertTriangle className="size-3" />, label: "Malignant" },
+    benign: { icon: <CheckCircle2 className="size-3" />, label: "Benign" },
+    uncertain: { icon: <CircleAlert className="size-3" />, label: "Uncertain" },
+  };
+  const m = map[severity];
   return (
-    <Badge variant="warning">
-      <CircleAlert className="size-3" /> Uncertain
-    </Badge>
+    <span className="flex shrink-0 items-center gap-1 rounded-full border border-white/30 bg-white/20 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
+      {m.icon}
+      {m.label}
+    </span>
   );
 }
 
@@ -414,8 +437,8 @@ function OODBanner({ score }: { score: number }) {
     <div className="flex items-start gap-2.5 rounded-[var(--radius)] border border-warning/40 bg-warning/10 p-3">
       <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
       <div>
-        <div className="text-xs font-semibold text-[color:#b45309]">Out-of-distribution slide</div>
-        <div className="text-[11px] text-[color:#b45309]/80">
+        <div className="text-xs font-semibold text-warning">Out-of-distribution slide</div>
+        <div className="text-[11px] text-warning/80">
           OOD score {score.toFixed(2)} — results may be unreliable. Pathologist review recommended.
         </div>
       </div>

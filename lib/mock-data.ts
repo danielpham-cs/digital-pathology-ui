@@ -190,6 +190,28 @@ export const PIPELINE_DAG: { nodes: DagNode[]; edges: [string, string][] } = {
   ],
 };
 
+// Slide library rows for the dashboard table.
+export interface SlideRow {
+  id: string;
+  name: string;
+  organ: string;
+  stain: string;
+  sizeMB: number;
+  status: "Analyzed" | "Pending" | "Processing";
+  updated: string;
+  collection: "personal" | "shared" | "public";
+}
+
+export const SLIDE_LIST: SlideRow[] = [
+  { id: "TCGA-A7-A0CE-01Z", name: "BRCA_A0CE_HE.svs", organ: "Breast", stain: "H&E", sizeMB: 842, status: "Analyzed", updated: "2026-09-28", collection: "personal" },
+  { id: "TCGA-05-4384-01Z", name: "LUAD_4384_HE.svs", organ: "Lung", stain: "H&E", sizeMB: 1310, status: "Pending", updated: "2026-09-27", collection: "personal" },
+  { id: "TCGA-AA-3524-01Z", name: "COAD_3524_HE.svs", organ: "Colon", stain: "H&E", sizeMB: 623, status: "Processing", updated: "2026-09-26", collection: "personal" },
+  { id: "TCGA-CV-7416-01Z", name: "HNSC_7416_HE.svs", organ: "Head & Neck", stain: "H&E", sizeMB: 998, status: "Analyzed", updated: "2026-09-21", collection: "shared" },
+  { id: "TCGA-DD-A113-01Z", name: "LIHC_A113_HE.svs", organ: "Liver", stain: "H&E", sizeMB: 1455, status: "Analyzed", updated: "2026-09-18", collection: "shared" },
+  { id: "TCGA-OR-A5J1-01Z", name: "ACC_A5J1_HE.svs", organ: "Adrenal", stain: "H&E", sizeMB: 712, status: "Pending", updated: "2026-09-15", collection: "public" },
+  { id: "TCGA-KK-A8IJ-01Z", name: "PRAD_A8IJ_HE.svs", organ: "Prostate", stain: "H&E", sizeMB: 889, status: "Analyzed", updated: "2026-09-12", collection: "public" },
+];
+
 export const SUGGESTED_PROMPTS = [
   "What is the tumor-to-lymphocyte ratio?",
   "Why was this staged as T2?",

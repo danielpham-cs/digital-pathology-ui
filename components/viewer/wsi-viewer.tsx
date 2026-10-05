@@ -3,6 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import OpenSeadragon from "openseadragon";
+import { Plus, Minus, Maximize2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { generateSyntheticSlide, type SlideRegions } from "@/lib/synthetic-slide";
 
@@ -30,11 +31,12 @@ export function WSIViewer() {
       tileSources: { type: "image", url: dataUrl },
       prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/images/",
       showNavigator: true,
-      navigatorPosition: "TOP_LEFT",
-      navigatorHeight: 86,
-      navigatorWidth: 128,
+      navigatorPosition: "BOTTOM_LEFT",
+      navigatorHeight: 92,
+      navigatorWidth: 136,
       navigatorBackground: "#0a0e14",
-      navigatorBorderColor: "#334155",
+      navigatorBorderColor: "rgba(255,255,255,0.15)",
+      navigatorMaintainSizeRatio: true,
       showNavigationControl: false,
       gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
       animationTime: 0.5,
@@ -83,9 +85,33 @@ export function WSIViewer() {
 
   const aspect = IMG_H / IMG_W; // viewport height for normalized width=1
 
+  const zoomBy = (factor: number) => {
+    const v = osdRef.current;
+    if (!v) return;
+    v.viewport.zoomBy(factor);
+    v.viewport.applyConstraints();
+  };
+  const goHome = () => osdRef.current?.viewport.goHome();
+  const goToMag = (mag: number) => {
+    const v = osdRef.current;
+    if (!v) return;
+    const imgZoom = mag / BASE_MAG;
+    v.viewport.zoomTo(v.viewport.imageToViewportZoom(imgZoom));
+    v.viewport.applyConstraints();
+  };
+
   return (
     <div className="relative h-full w-full bg-viewer">
       <div ref={ref} className="h-full w-full" />
+
+      {/* depth vignette */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,0.35) 100%)",
+        }}
+      />
 
       {/* SVG overlays aligned to the image via OSD overlay div */}
       {ready && regions && (
@@ -102,17 +128,32 @@ export function WSIViewer() {
               if (layer.id === "tissue")
                 return (
                   <g key="tissue" opacity={op}>
+                    <defs>
+                      <radialGradient id="tumorGlow">
+                        <stop offset="0%" stopColor="var(--danger)" stopOpacity={0.45} />
+                        <stop offset="60%" stopColor="var(--danger)" stopOpacity={0.18} />
+                        <stop offset="100%" stopColor="var(--danger)" stopOpacity={0} />
+                      </radialGradient>
+                    </defs>
                     {regions.tumor.map((t, i) => (
-                      <circle
-                        key={i}
-                        cx={t.x * IMG_W}
-                        cy={t.y * IMG_H}
-                        r={t.r * IMG_W}
-                        fill="var(--danger)"
-                        stroke="var(--danger)"
-                        strokeWidth={6}
-                        fillOpacity={0.28}
-                      />
+                      <g key={i}>
+                        <circle
+                          cx={t.x * IMG_W}
+                          cy={t.y * IMG_H}
+                          r={t.r * IMG_W}
+                          fill="url(#tumorGlow)"
+                        />
+                        <circle
+                          cx={t.x * IMG_W}
+                          cy={t.y * IMG_H}
+                          r={t.r * IMG_W}
+                          fill="none"
+                          stroke="var(--danger)"
+                          strokeWidth={2.5}
+                          strokeDasharray="10 7"
+                          strokeOpacity={0.9}
+                        />
+                      </g>
                     ))}
                   </g>
                 );
@@ -161,14 +202,60 @@ export function WSIViewer() {
       {/* scale bar */}
       <ScaleBar />
 
+      {/* floating glass control bar */}
+      {ready && (
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/15 glass-dark px-1.5 py-1.5 text-white shadow-lg">
+          <CtrlButton onClick={() => zoomBy(1.4)} label="Zoom in">
+            <Plus className="size-4" />
+          </CtrlButton>
+          <CtrlButton onClick={() => zoomBy(0.7)} label="Zoom out">
+            <Minus className="size-4" />
+          </CtrlButton>
+          <CtrlButton onClick={goHome} label="Fit">
+            <Maximize2 className="size-3.5" />
+          </CtrlButton>
+          <span className="mx-1 h-5 w-px bg-white/15" />
+          {[2, 10, 20, 40].map((m) => (
+            <button
+              key={m}
+              onClick={() => goToMag(m)}
+              className="rounded-full px-2.5 py-1 text-[11px] font-medium text-white/80 transition-colors hover:bg-white/15 hover:text-white cursor-pointer"
+            >
+              {m}×
+            </button>
+          ))}
+        </div>
+      )}
+
       {status === "running" && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="rounded-full bg-black/55 px-4 py-1.5 text-xs font-medium text-white backdrop-blur">
+          <div className="flex items-center gap-2 rounded-full glass-dark px-4 py-2 text-xs font-medium text-white shadow-lg">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand-3" />
             Analyzing slide…
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function CtrlButton({
+  onClick,
+  label,
+  children,
+}: {
+  onClick: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="flex h-8 w-8 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/15 hover:text-white cursor-pointer"
+    >
+      {children}
+    </button>
   );
 }
 

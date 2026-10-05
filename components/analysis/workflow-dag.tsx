@@ -49,11 +49,11 @@ export function WorkflowDAG() {
           return (
             <path
               key={`${from}-${to}`}
+              className={toState === "active" ? "flow" : undefined}
               d={`M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`}
               fill="none"
               stroke={active ? "var(--primary)" : "var(--border)"}
-              strokeWidth={active ? 2 : 1.5}
-              strokeDasharray={toState === "active" ? "4 3" : undefined}
+              strokeWidth={active ? 2.5 : 1.5}
             />
           );
         })}
@@ -66,10 +66,10 @@ export function WorkflowDAG() {
           <div
             key={n.id}
             className={cn(
-              "absolute flex items-center gap-2 rounded-[var(--radius)] border px-2.5 transition-colors",
+              "absolute flex items-center gap-2 rounded-[var(--radius)] border px-2.5 transition-all",
               st === "done" && "border-success/40 bg-success/5",
-              st === "active" && "border-primary bg-primary/5 shadow-sm",
-              st === "pending" && "border-border bg-surface"
+              st === "active" && "border-primary bg-surface shadow-glow pulse-glow",
+              st === "pending" && "border-border bg-surface/50"
             )}
             style={{
               width: DAG_NODE_W,

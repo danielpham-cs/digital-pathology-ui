@@ -31,10 +31,10 @@ export function ChatPanel() {
       <button
         onClick={toggle}
         className={cn(
-          "fixed bottom-11 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-lg transition-transform hover:scale-[1.03] cursor-pointer",
-          open && "opacity-0 pointer-events-none"
+          "shine brand-gradient fixed bottom-6 z-40 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-white shadow-glow transition-transform hover:scale-[1.04] cursor-pointer",
+          open && "pointer-events-none opacity-0"
         )}
-        style={{ left: 276 }}
+        style={{ left: 244 }}
       >
         <Sparkles className="size-4" /> Ask AI
       </button>
@@ -46,8 +46,8 @@ export function ChatPanel() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-11 z-40 flex h-[460px] w-[360px] flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
-            style={{ left: 276 }}
+            className="glass fixed bottom-6 z-40 flex h-[460px] w-[360px] flex-col overflow-hidden rounded-2xl border border-border shadow-2xl"
+            style={{ left: 244 }}
           >
             {/* header */}
             <div className="flex items-center justify-between border-b border-border px-3.5 py-2.5">

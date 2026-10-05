@@ -54,7 +54,7 @@ export const useStore = create<ViewerState>((set, get) => ({
   setViewport: (v) => set(v),
 
   layers: [
-    { id: "tissue", label: "Tissue mask", enabled: true, opacity: 55, color: "var(--danger)" },
+    { id: "tissue", label: "Tissue mask", enabled: true, opacity: 40, color: "var(--danger)" },
     { id: "cells", label: "Cell detection", enabled: false, opacity: 80, color: "var(--primary)" },
     { id: "attention", label: "Attention heatmap", enabled: false, opacity: 65, color: "var(--warning)" },
   ],

@@ -1,31 +1,45 @@
 @import "tailwindcss";
 
 :root {
-  /* Surfaces */
-  --background: #f7f8fa;
-  --surface: #ffffff;
-  --surface-muted: #f1f3f6;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
+  color-scheme: dark;
+  /* Dark TissueLab-style surfaces */
+  --background: #0a0d14;
+  --surface: #12161f;
+  --surface-muted: #1a1f2b;
+  --surface-hover: #1e2431;
+  --foreground: #e6e9f0;
+  --muted: #8b93a7;
+  --border: #242a38;
 
-  /* Viewer stays dark even in light mode (clinical PACS look) */
-  --viewer-bg: #0a0e14;
+  --viewer-bg: #06080c;
 
-  /* Brand + semantic */
-  --primary: #2563eb;
+  /* Violet/purple brand (TissueLab accent) */
+  --primary: #8b5cf6;
   --primary-foreground: #ffffff;
-  --teal: #0d9488;    /* healthy tissue */
-  --danger: #dc2626;  /* tumor / malignant */
-  --warning: #f59e0b; /* OOD / low confidence */
-  --success: #16a34a;
-  --necrosis: #7c3aed; /* necrotic tissue */
+  --brand-2: #a855f7;
+  --brand-3: #6366f1;
+  --teal: #2dd4bf;
+  --danger: #f43f5e;
+  --warning: #f59e0b;
+  --success: #22c55e;
+  --necrosis: #c084fc;
+
+  --brand-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  --brand-gradient-soft: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(168, 85, 247, 0.16));
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 18px -6px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 20px 48px -16px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 8px 28px -6px rgba(139, 92, 246, 0.5);
+
+  --radius: 0.625rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
+  --color-surface-hover: var(--surface-hover);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
@@ -33,6 +47,8 @@
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-brand-2: var(--brand-2);
+  --color-brand-3: var(--brand-3);
   --color-teal: var(--teal);
   --color-danger: var(--danger);
   --color-warning: var(--warning);
@@ -41,27 +57,134 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-
-  --radius: 0.625rem;
 }
 
 * {
   border-color: var(--border);
 }
 
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  height: 100%;
 }
 
-/* Tabular numbers for all stats */
+body {
+  color: var(--foreground);
+  /* Monospace UI — TissueLab's signature dev-tool look */
+  font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(700px 480px at 0% -8%, rgba(99, 102, 241, 0.14), transparent 60%),
+    radial-gradient(760px 520px at 100% 108%, rgba(168, 85, 247, 0.12), transparent 62%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+}
+
+/* Use the display sans for big wordmarks/headings when wanted */
+.font-display {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---- Utilities ---- */
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Thin scrollbars for panels */
+.glass {
+  background: rgba(18, 22, 31, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+.brand-gradient {
+  background-image: var(--brand-gradient);
+}
+
+.gradient-text {
+  background-image: linear-gradient(135deg, #a78bfa, #c084fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: var(--shadow-lg);
+}
+
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+}
+.shine:hover::after {
+  transform: translateX(120%);
+  transition: transform 0.7s ease;
+}
+
+@keyframes dashflow {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+.flow {
+  stroke-dasharray: 4 3;
+  animation: dashflow 0.6s linear infinite;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(139, 92, 246, 0);
+  }
+}
+.pulse-glow {
+  animation: pulseGlow 1.6s ease-in-out infinite;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.fade-up {
+  animation: fadeUp 0.6s ease-out both;
+}
+.fade-up-delay {
+  animation: fadeUp 0.7s ease-out 0.12s both;
+}
+
 .panel-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -72,4 +195,43 @@ body {
 }
 .panel-scroll::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* A4 report — stays light for print legibility; re-scope tokens to light */
+.a4 {
+  --surface: #ffffff;
+  --surface-muted: #f1f3f9;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --border: #e6e9f0;
+  width: 210mm;
+  min-height: 297mm;
+  background: #fff;
+  color: #0f172a;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff !important;
+    background-image: none !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .a4 {
+    width: auto;
+    min-height: auto;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+  .print-break {
+    break-inside: avoid;
+  }
 }
