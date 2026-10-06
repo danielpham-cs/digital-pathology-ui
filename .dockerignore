@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.claude
+slides
+backend/__pycache__
+**/__pycache__
+*.svs
+*.ndpi
+*.tiff
+*.tif
+*.mrxs
+*.zip
+npm-debug.log*
+.DS_Store

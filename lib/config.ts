@@ -1,6 +1,8 @@
-// Base URL of the FastAPI tile server. Override with NEXT_PUBLIC_TILE_API.
-export const TILE_API =
-  process.env.NEXT_PUBLIC_TILE_API?.replace(/\/$/, "") || "http://localhost:8000";
+// Tile-server base URL. Empty = same-origin: the browser calls /api on the
+// frontend host and Next proxies it to the backend (see next.config.ts), so it
+// works on localhost and on a LAN IP without rebuilding. Override only to point
+// the browser directly at a separate backend host.
+export const TILE_API = process.env.NEXT_PUBLIC_TILE_API?.replace(/\/$/, "") ?? "";
 
 export interface RemoteSlide {
   id: string;

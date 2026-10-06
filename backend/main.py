@@ -21,8 +21,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # --- config -----------------------------------------------------------------
 
-# Directory to scan for slides. Defaults to the repo root (one level up).
-SLIDES_DIR = Path(os.environ.get("SLIDES_DIR", Path(__file__).resolve().parent.parent))
+# Directory to scan for slides. Defaults to <repo>/slides.
+SLIDES_DIR = Path(os.environ.get("SLIDES_DIR", Path(__file__).resolve().parent.parent / "slides"))
 WSI_EXTS = {".svs", ".tiff", ".tif", ".ndpi", ".mrxs"}
 TILE_SIZE = 254
 OVERLAP = 1

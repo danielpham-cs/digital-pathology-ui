@@ -1,0 +1,32 @@
+# PathologyAI — one command to run the whole app (frontend + tile server).
+#
+#   docker compose up -d --build
+#
+# Then open http://localhost:3000 (same machine) or http://<server-LAN-IP>:3000
+# (anyone on the lab network). Put slide files (.svs/.tiff/.ndpi) in ./slides.
+
+services:
+  backend:
+    build: ./backend
+    environment:
+      SLIDES_DIR: /slides
+    volumes:
+      - ./slides:/slides
+    restart: unless-stopped
+    # exposed on the host too, for direct API access / debugging:
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      args:
+        # the browser hits /api on the frontend, which Next proxies here:
+        BACKEND_URL: http://backend:8000
+    environment:
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
