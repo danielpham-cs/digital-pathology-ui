@@ -39,13 +39,7 @@ export function WSIViewer() {
       element: ref.current,
       tileSources: { type: "image", url: dataUrl },
       prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/images/",
-      showNavigator: true,
-      navigatorPosition: "BOTTOM_LEFT",
-      navigatorHeight: 92,
-      navigatorWidth: 136,
-      navigatorBackground: "#0a0e14",
-      navigatorBorderColor: "rgba(255,255,255,0.15)",
-      navigatorMaintainSizeRatio: true,
+      showNavigator: false,
       showNavigationControl: false,
       gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
       animationTime: 0.5,
@@ -258,10 +252,7 @@ export function WSIViewer() {
         </button>
       )}
 
-      {/* scale bar */}
-      <ScaleBar />
-
-      {/* floating glass control bar */}
+      {/* floating glass control bar (zoom · mag presets · scale) */}
       {viewerInstance && (
         <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/15 glass-dark px-1.5 py-1.5 text-white shadow-lg">
           <CtrlButton onClick={() => zoomBy(1.4)} label="Zoom in">
@@ -283,6 +274,8 @@ export function WSIViewer() {
               {m}×
             </button>
           ))}
+          <span className="mx-1 h-5 w-px bg-white/15" />
+          <ScaleIndicator />
         </div>
       )}
 
@@ -344,16 +337,16 @@ function OverlayMount({
   return createPortal(children, node);
 }
 
-function ScaleBar() {
+// Compact scale readout shown inside the control bar.
+function ScaleIndicator() {
   const magnification = useStore((s) => s.magnification);
   const mpp = useStore((s) => s.caseData.mpp);
-  // bar represents 100 screen px → convert to microns using current mag
   const micronsPerScreenPx = (mpp * BASE_MAG) / Math.max(magnification, 0.001);
-  const microns = Math.round(micronsPerScreenPx * 100);
+  const microns = Math.round(micronsPerScreenPx * 60);
   return (
-    <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1">
+    <div className="flex items-center gap-1.5 pl-1 pr-2">
+      <div className="h-[3px] w-[60px] rounded-full bg-white/70" />
       <span className="text-[10px] font-medium text-white/80 tabular">{microns} µm</span>
-      <div className="h-1 w-[100px] rounded-full bg-white/80" />
     </div>
   );
 }

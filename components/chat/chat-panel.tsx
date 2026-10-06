@@ -49,8 +49,7 @@ export function ChatPanel() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="glass fixed bottom-6 z-40 flex h-[460px] w-[360px] flex-col overflow-hidden rounded-2xl border border-border shadow-2xl"
-            style={{ left: 244 }}
+            className="glass fixed bottom-20 left-1/2 z-40 flex h-[460px] w-[360px] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border border-border shadow-2xl"
           >
             {/* header */}
             <div className="flex items-center justify-between border-b border-border px-3.5 py-2.5">

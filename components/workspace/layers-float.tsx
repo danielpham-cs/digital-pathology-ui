@@ -37,7 +37,7 @@ export function LayersFloat() {
       </button>
 
       {open && (
-        <div className="max-h-[calc(100vh-180px)] space-y-3 overflow-y-auto px-3 pb-3 panel-scroll">
+        <div className="max-h-[56vh] space-y-3 overflow-y-auto px-3 pb-3 panel-scroll">
           {/* view mode */}
           <div className="space-y-1.5">
             {(["original", "suspicious"] as const).map((mode) => {

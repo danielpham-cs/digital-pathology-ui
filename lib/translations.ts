@@ -1,6 +1,13 @@
 export type Locale = "zh-TW" | "en";
 
 const zh: Record<string, string> = {
+  "Dashboard": "儀表板",
+  "Image Viewer": "影像檢視器",
+  "Workspace": "工作區",
+  "Language": "語言",
+  "Cloud Storage": "雲端儲存空間",
+  "Cases": "病例",
+  "Search slides…": "搜尋切片…",
   "Region inspection": "區域檢視",
   "Select a region to zoom in, or click a marked area on the slide.": "選取區域即可局部放大，也可直接點選切片中的標記區域。",
   "Back to full slide": "回到全圖",
