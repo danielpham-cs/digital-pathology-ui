@@ -35,6 +35,12 @@
 *.tiff
 *.zip
 
+# python (backend)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

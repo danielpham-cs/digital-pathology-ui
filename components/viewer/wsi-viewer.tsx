@@ -8,7 +8,9 @@ import OpenSeadragon from "openseadragon";
 import { Plus, Minus, Maximize2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { generateSyntheticSlide, type SlideRegions } from "@/lib/synthetic-slide";
+import { fetchSlides, TILE_API } from "@/lib/config";
 
+// Synthetic-slide geometry (used only for the demo overlays / region zoom).
 const IMG_W = 2400;
 const IMG_H = 1600;
 const BASE_MAG = 40; // the synthetic slide represents a 40x scan
@@ -28,71 +30,122 @@ export function WSIViewer() {
   const viewMode = useStore((s) => s.viewMode);
   const status = useStore((s) => s.status);
 
-  // init viewer once
+  // Live-slide state: null mpp => synthetic demo; a value => real slide from the
+  // tile server. Dims/baseMag live in refs so the OSD event closures stay current.
+  const [source, setSource] = React.useState<{ real: boolean; name: string } | null>(null);
+  const [slideMpp, setSlideMpp] = React.useState<number | null>(null);
+  const [baseMag, setBaseMag] = React.useState(BASE_MAG);
+  const dimsRef = React.useRef({ w: IMG_W, h: IMG_H });
+  const baseMagRef = React.useRef(BASE_MAG);
+  const regionsRef = React.useRef<SlideRegions | null>(null);
+
+  // init viewer once — try the real tile server, fall back to the synthetic slide
   React.useEffect(() => {
     if (!ref.current || osdRef.current) return;
-    const { dataUrl, regions } = generateSyntheticSlide(IMG_W, IMG_H);
-    setRegions(regions);
-    setRegionList(regions.tumor);
+    let cancelled = false;
+    const controller = new AbortController();
+    let cleanup: (() => void) | null = null;
 
-    const viewer = OpenSeadragon({
-      element: ref.current,
-      tileSources: { type: "image", url: dataUrl },
-      prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/images/",
-      showNavigator: false,
-      showNavigationControl: false,
-      gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
-      animationTime: 0.5,
-      springStiffness: 7,
-      minZoomImageRatio: 0.6,
-      maxZoomPixelRatio: 3,
-      visibilityRatio: 1,
-      crossOriginPolicy: "Anonymous",
-    });
-    osdRef.current = viewer;
-    // Let OpenSeadragon distinguish clicks from drags; overlays do not intercept panning.
-    viewer.addHandler("canvas-click", (event) => {
-      const state = useStore.getState();
-      if (!event.quick || state.status !== "done" || state.viewMode !== "suspicious") return;
-      const point = viewer.viewport.viewportToImageCoordinates(viewer.viewport.pointFromPixel(event.position));
-      const hits = regions.tumor.map((region, index) => ({ region, index }))
-        .filter(({ region }) => Math.hypot(point.x - region.x * IMG_W, point.y - region.y * IMG_H) <= region.r * IMG_W)
-        .sort((a, b) => a.region.r - b.region.r);
-      if (hits.length) state.selectRegion(hits[0].index);
-    });
+    (async () => {
+      const real = await fetchSlides(controller.signal);
+      if (cancelled || !ref.current) return;
 
-    const report = () => {
-      const zoom = viewer.viewport.getZoom(true);
-      const imgZoom = viewer.viewport.viewportToImageZoom(zoom);
-      setViewport({ zoom, magnification: imgZoom * BASE_MAG });
-    };
-    viewer.addHandler("open", () => {
-      setViewerInstance(viewer);
-      report();
-    });
-    viewer.addHandler("zoom", report);
-    viewer.addHandler("animation", report);
-
-    const el = ref.current;
-    const onMove = (e: MouseEvent) => {
-      if (!viewer.world.getItemCount()) return;
-      const rect = el.getBoundingClientRect();
-      const vp = viewer.viewport.pointFromPixel(
-        new OpenSeadragon.Point(e.clientX - rect.left, e.clientY - rect.top)
-      );
-      const img = viewer.viewport.viewportToImageCoordinates(vp);
-      if (img.x >= 0 && img.y >= 0 && img.x <= IMG_W && img.y <= IMG_H) {
-        setViewport({ pointer: { x: Math.round(img.x), y: Math.round(img.y) } });
+      let tileSources: OpenSeadragon.Options["tileSources"];
+      if (real && real.length) {
+        const s = real[0];
+        tileSources = `${TILE_API}/api/slides/${s.id}.dzi`;
+        dimsRef.current = { w: s.width, h: s.height };
+        baseMagRef.current = Number(s.magnification) || 40;
+        regionsRef.current = null;
+        setBaseMag(baseMagRef.current);
+        setSlideMpp(s.mpp ?? null);
+        setSource({ real: true, name: s.name });
+        setRegions(null);
+        setRegionList([]);
       } else {
-        setViewport({ pointer: null });
+        const syn = generateSyntheticSlide(IMG_W, IMG_H);
+        tileSources = { type: "image", url: syn.dataUrl };
+        dimsRef.current = { w: IMG_W, h: IMG_H };
+        baseMagRef.current = BASE_MAG;
+        regionsRef.current = syn.regions;
+        setBaseMag(BASE_MAG);
+        setSlideMpp(null);
+        setSource({ real: false, name: "Synthetic demo slide" });
+        setRegions(syn.regions);
+        setRegionList(syn.regions.tumor);
       }
-    };
-    el.addEventListener("mousemove", onMove);
+
+      const viewer = OpenSeadragon({
+        element: ref.current,
+        tileSources,
+        prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/images/",
+        showNavigator: false,
+        showNavigationControl: false,
+        gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
+        animationTime: 0.5,
+        springStiffness: 7,
+        minZoomImageRatio: 0.6,
+        maxZoomPixelRatio: 3,
+        visibilityRatio: 1,
+        crossOriginPolicy: "Anonymous",
+      });
+      osdRef.current = viewer;
+
+      // click a suspected region to select it (synthetic demo only)
+      viewer.addHandler("canvas-click", (event) => {
+        const rg = regionsRef.current;
+        const state = useStore.getState();
+        if (!rg || !event.quick || state.status !== "done" || state.viewMode !== "suspicious") return;
+        const { w, h } = dimsRef.current;
+        const point = viewer.viewport.viewportToImageCoordinates(
+          viewer.viewport.pointFromPixel(event.position)
+        );
+        const hits = rg.tumor
+          .map((region, index) => ({ region, index }))
+          .filter(({ region }) => Math.hypot(point.x - region.x * w, point.y - region.y * h) <= region.r * w)
+          .sort((a, b) => a.region.r - b.region.r);
+        if (hits.length) state.selectRegion(hits[0].index);
+      });
+
+      const report = () => {
+        const zoom = viewer.viewport.getZoom(true);
+        const imgZoom = viewer.viewport.viewportToImageZoom(zoom);
+        setViewport({ zoom, magnification: imgZoom * baseMagRef.current });
+      };
+      viewer.addHandler("open", () => {
+        setViewerInstance(viewer);
+        report();
+      });
+      viewer.addHandler("zoom", report);
+      viewer.addHandler("animation", report);
+
+      const el = ref.current;
+      const onMove = (e: MouseEvent) => {
+        if (!viewer.world.getItemCount()) return;
+        const rect = el.getBoundingClientRect();
+        const vp = viewer.viewport.pointFromPixel(
+          new OpenSeadragon.Point(e.clientX - rect.left, e.clientY - rect.top)
+        );
+        const img = viewer.viewport.viewportToImageCoordinates(vp);
+        const { w, h } = dimsRef.current;
+        if (img.x >= 0 && img.y >= 0 && img.x <= w && img.y <= h) {
+          setViewport({ pointer: { x: Math.round(img.x), y: Math.round(img.y) } });
+        } else {
+          setViewport({ pointer: null });
+        }
+      };
+      el.addEventListener("mousemove", onMove);
+      cleanup = () => {
+        el.removeEventListener("mousemove", onMove);
+        viewer.destroy();
+        osdRef.current = null;
+      };
+    })();
 
     return () => {
-      el.removeEventListener("mousemove", onMove);
-      viewer.destroy();
-      osdRef.current = null;
+      cancelled = true;
+      controller.abort();
+      cleanup?.();
     };
   }, [setViewport, setRegionList]);
 
@@ -127,7 +180,7 @@ export function WSIViewer() {
   const goToMag = (mag: number) => {
     const v = osdRef.current;
     if (!v) return;
-    const imgZoom = mag / BASE_MAG;
+    const imgZoom = mag / baseMagRef.current;
     v.viewport.zoomTo(v.viewport.imageToViewportZoom(imgZoom));
     v.viewport.applyConstraints();
   };
@@ -275,7 +328,15 @@ export function WSIViewer() {
             </button>
           ))}
           <span className="mx-1 h-5 w-px bg-white/15" />
-          <ScaleIndicator />
+          <ScaleIndicator mpp={slideMpp} baseMag={baseMag} />
+        </div>
+      )}
+
+      {/* source badge */}
+      {source && (
+        <div className="pointer-events-none absolute left-4 bottom-4 flex items-center gap-1.5 rounded-full glass-dark px-2.5 py-1 text-[10px] font-medium text-white shadow-lg">
+          <span className={`h-1.5 w-1.5 rounded-full ${source.real ? "bg-success" : "bg-warning"}`} />
+          {source.real ? t("Live slide") : t("Synthetic demo")}
         </div>
       )}
 
@@ -338,10 +399,11 @@ function OverlayMount({
 }
 
 // Compact scale readout shown inside the control bar.
-function ScaleIndicator() {
+function ScaleIndicator({ mpp, baseMag }: { mpp: number | null; baseMag: number }) {
   const magnification = useStore((s) => s.magnification);
-  const mpp = useStore((s) => s.caseData.mpp);
-  const micronsPerScreenPx = (mpp * BASE_MAG) / Math.max(magnification, 0.001);
+  const caseMpp = useStore((s) => s.caseData.mpp);
+  const effMpp = mpp ?? caseMpp;
+  const micronsPerScreenPx = (effMpp * baseMag) / Math.max(magnification, 0.001);
   const microns = Math.round(micronsPerScreenPx * 60);
   return (
     <div className="flex items-center gap-1.5 pl-1 pr-2">

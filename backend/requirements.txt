@@ -1,0 +1,8 @@
+# Install via conda-forge (openslide ships the native lib):
+#   conda create -n pathology-be -c conda-forge python=3.11 openslide-python fastapi uvicorn-standard pillow
+#
+# Or with pip (requires the OpenSlide system library, e.g. `brew install openslide`):
+openslide-python>=1.3
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pillow>=10

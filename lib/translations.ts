@@ -1,6 +1,8 @@
 export type Locale = "zh-TW" | "en";
 
 const zh: Record<string, string> = {
+  "Live slide": "真實切片",
+  "Synthetic demo": "合成示範",
   "Upload slide": "上傳切片",
   "Drag & drop a slide here": "將切片拖放到此處",
   "or click to browse files": "或點擊選擇檔案",
