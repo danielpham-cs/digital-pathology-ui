@@ -1,7 +1,7 @@
 import type { SlideRegions } from "./synthetic-slide";
 import type { Locale } from "./translations";
 import { create } from "zustand";
-import { MOCK_CASE, PIPELINE_STEPS, type CaseData } from "./mock-data";
+import { MOCK_CASE, PIPELINE_STEPS, type CaseData, type SlideRow } from "./mock-data";
 import { respond, type ChatMessage } from "./assistant";
 
 export type AnalysisStatus = "idle" | "running" | "done";
@@ -55,6 +55,10 @@ interface ViewerState {
   chatThinking: boolean;
   toggleChat: () => void;
   sendChat: (text: string, locale: Locale) => void;
+
+  // slide library — user uploads (session-persistent)
+  uploadedSlides: SlideRow[];
+  addSlide: (slide: SlideRow) => void;
 }
 
 export const useStore = create<ViewerState>((set, get) => ({
@@ -171,4 +175,7 @@ export const useStore = create<ViewerState>((set, get) => ({
       }));
     }, 550);
   },
+
+  uploadedSlides: [],
+  addSlide: (slide) => set((s) => ({ uploadedSlides: [slide, ...s.uploadedSlides] })),
 }));

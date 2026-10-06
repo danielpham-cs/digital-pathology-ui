@@ -16,8 +16,10 @@ import {
   HardDrive,
 } from "lucide-react";
 import { Sidebar } from "@/components/shell/sidebar";
+import { UploadModal } from "@/components/dashboard/upload-modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useStore } from "@/lib/store";
 import { SLIDE_LIST, type SlideRow } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -30,15 +32,19 @@ const COLLECTIONS = [
 export default function DashboardPage() {
   const [collection, setCollection] = React.useState<SlideRow["collection"]>("personal");
   const [query, setQuery] = React.useState("");
+  const [uploadOpen, setUploadOpen] = React.useState(false);
+  const uploadedSlides = useStore((s) => s.uploadedSlides);
 
-  const rows = SLIDE_LIST.filter(
+  const allSlides = React.useMemo(() => [...uploadedSlides, ...SLIDE_LIST], [uploadedSlides]);
+
+  const rows = allSlides.filter(
     (s) =>
       s.collection === collection &&
       (query === "" || `${s.name} ${s.organ} ${s.id}`.toLowerCase().includes(query.toLowerCase()))
   );
 
-  const analyzed = SLIDE_LIST.filter((s) => s.status === "Analyzed").length;
-  const processing = SLIDE_LIST.filter((s) => s.status === "Processing").length;
+  const analyzed = allSlides.filter((s) => s.status === "Analyzed").length;
+  const processing = allSlides.filter((s) => s.status === "Processing").length;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -54,14 +60,14 @@ export default function DashboardPage() {
                 Manage whole-slide images and launch AI analysis.
               </p>
             </div>
-            <Button className="shine">
+            <Button className="shine" onClick={() => setUploadOpen(true)}>
               <Upload /> Upload slide
             </Button>
           </div>
 
           {/* stat row */}
           <div className="mt-6 grid grid-cols-4 gap-3">
-            <StatCard icon={<Layers className="size-4" />} label="Total slides" value={SLIDE_LIST.length} />
+            <StatCard icon={<Layers className="size-4" />} label="Total slides" value={allSlides.length} />
             <StatCard icon={<CheckCircle2 className="size-4 text-success" />} label="Analyzed" value={analyzed} />
             <StatCard icon={<Loader2 className="size-4 text-warning" />} label="Processing" value={processing} />
             <StatCard icon={<HardDrive className="size-4 text-primary" />} label="Storage used" value="3.8 GB" />
@@ -72,7 +78,7 @@ export default function DashboardPage() {
             {COLLECTIONS.map((c) => {
               const Icon = c.icon;
               const active = collection === c.id;
-              const count = SLIDE_LIST.filter((s) => s.collection === c.id).length;
+              const count = allSlides.filter((s) => s.collection === c.id).length;
               return (
                 <button
                   key={c.id}
@@ -164,6 +170,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
     </div>
   );
 }

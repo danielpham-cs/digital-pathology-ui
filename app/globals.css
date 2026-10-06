@@ -94,10 +94,18 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Near-opaque so slide detail never bleeds through when backdrop-filter
+   fails over the OpenSeadragon canvas. */
 .glass {
-  background: rgba(18, 22, 31, 0.72);
+  background: rgba(18, 22, 31, 0.94);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+.glass-dark {
+  background: rgba(10, 12, 18, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .brand-gradient {
@@ -124,9 +132,12 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
-.shine {
-  position: relative;
-  overflow: hidden;
+/* Layered so utilities like `fixed`/`absolute` can override the position. */
+@layer components {
+  .shine {
+    position: relative;
+    overflow: hidden;
+  }
 }
 .shine::after {
   content: "";

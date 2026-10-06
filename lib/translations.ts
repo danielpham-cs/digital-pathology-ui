@@ -1,6 +1,13 @@
 export type Locale = "zh-TW" | "en";
 
 const zh: Record<string, string> = {
+  "Upload slide": "上傳切片",
+  "Drag & drop a slide here": "將切片拖放到此處",
+  "or click to browse files": "或點擊選擇檔案",
+  "Demo upload — the slide is added to your library without leaving the browser.": "示範上傳 — 切片會直接加入您的資料庫，無需離開瀏覽器。",
+  "Uploading…": "上傳中…",
+  "Upload complete — added to your library.": "上傳完成 — 已加入您的資料庫。",
+  "Unclassified": "未分類",
   "Dashboard": "儀表板",
   "Image Viewer": "影像檢視器",
   "Workspace": "工作區",

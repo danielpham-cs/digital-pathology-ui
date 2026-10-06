@@ -27,6 +27,14 @@
 # local claude settings
 .claude/settings.local.json
 
+# whole-slide image data (large, keep out of git)
+*.svs
+*.ndpi
+*.mrxs
+*.tif
+*.tiff
+*.zip
+
 # debug
 npm-debug.log*
 yarn-debug.log*
