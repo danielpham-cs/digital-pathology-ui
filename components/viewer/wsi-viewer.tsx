@@ -52,7 +52,9 @@ export function WSIViewer() {
 
       let tileSources: OpenSeadragon.Options["tileSources"];
       if (real && real.length) {
-        const s = real[0];
+        // honor ?slide=<id> (e.g. an uploaded slide); else the first available
+        const wanted = new URLSearchParams(window.location.search).get("slide");
+        const s = (wanted && real.find((x) => x.id === wanted)) || real[0];
         tileSources = `${TILE_API}/api/slides/${s.id}.dzi`;
         dimsRef.current = { w: s.width, h: s.height };
         baseMagRef.current = Number(s.magnification) || 40;

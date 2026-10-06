@@ -144,7 +144,7 @@ export default function DashboardPage() {
             {rows.map((s) => (
               <Link
                 key={s.id}
-                href="/viewer"
+                href={`/viewer?slide=${encodeURIComponent(s.id)}`}
                 className="grid grid-cols-[1.6fr_1fr_0.8fr_0.9fr_1fr_auto] items-center gap-3 border-b border-border/60 px-4 py-3 text-xs transition-colors last:border-0 hover:bg-surface-hover"
               >
                 <div className="flex items-center gap-2.5">

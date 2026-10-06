@@ -16,7 +16,7 @@ from pathlib import Path
 import openslide
 from openslide import OpenSlide
 from openslide.deepzoom import DeepZoomGenerator
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 # --- config -----------------------------------------------------------------
@@ -33,7 +33,7 @@ app = FastAPI(title="PathologyAI Tile Server")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -101,6 +101,45 @@ def list_slides():
         except Exception as exc:  # pragma: no cover - surface bad files
             out.append({"id": sid, "name": path.name, "error": str(exc)})
     return {"slides": out}
+
+
+@app.post("/api/slides")
+async def upload_slide(file: UploadFile = File(...)):
+    """Store an uploaded WSI on disk and return its metadata (now viewable)."""
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in WSI_EXTS:
+        raise HTTPException(status_code=400, detail=f"unsupported file type: {ext or '?'}")
+
+    SLIDES_DIR.mkdir(parents=True, exist_ok=True)
+    dest = SLIDES_DIR / Path(file.filename).name
+    with dest.open("wb") as out:
+        while chunk := await file.read(1 << 20):  # 1 MB chunks
+            out.write(chunk)
+    await file.close()
+
+    # validate it actually opens; drop it otherwise
+    try:
+        slide = OpenSlide(str(dest))
+        w, h = slide.dimensions
+        props = slide.properties
+        mpp = float(props.get(openslide.PROPERTY_NAME_MPP_X) or 0) or None
+        mag = props.get(openslide.PROPERTY_NAME_OBJECTIVE_POWER)
+        slide.close()
+    except Exception as exc:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail=f"not a readable slide: {exc}")
+
+    sid = dest.name.split(".")[0]
+    get_dz.cache_clear()
+    return {
+        "id": sid,
+        "name": dest.name,
+        "width": w,
+        "height": h,
+        "mpp": mpp,
+        "magnification": mag,
+        "sizeMB": round(dest.stat().st_size / (1024 * 1024)),
+    }
 
 
 @app.get("/api/slides/{slide_id}/info")

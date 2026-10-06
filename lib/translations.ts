@@ -8,6 +8,8 @@ const zh: Record<string, string> = {
   "or click to browse files": "或點擊選擇檔案",
   "Demo upload — the slide is added to your library without leaving the browser.": "示範上傳 — 切片會直接加入您的資料庫，無需離開瀏覽器。",
   "Uploading…": "上傳中…",
+  "Upload failed": "上傳失敗",
+  "Try again": "重試",
   "Upload complete — added to your library.": "上傳完成 — 已加入您的資料庫。",
   "Unclassified": "未分類",
   "Dashboard": "儀表板",
