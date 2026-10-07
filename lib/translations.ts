@@ -10,6 +10,7 @@ const zh: Record<string, string> = {
   "Uploading…": "上傳中…",
   "Upload failed": "上傳失敗",
   "Try again": "重試",
+  "Delete this slide?": "刪除這張切片？",
   "Upload complete — added to your library.": "上傳完成 — 已加入您的資料庫。",
   "Unclassified": "未分類",
   "Dashboard": "儀表板",

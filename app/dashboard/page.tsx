@@ -14,12 +14,14 @@ import {
   Loader2,
   Clock,
   HardDrive,
+  Trash2,
 } from "lucide-react";
 import { Sidebar } from "@/components/shell/sidebar";
 import { UploadModal } from "@/components/dashboard/upload-modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 import { SLIDE_LIST, type SlideRow } from "@/lib/mock-data";
 import { TILE_API, type RemoteSlide } from "@/lib/config";
 import { cn } from "@/lib/utils";
@@ -45,6 +47,7 @@ const COLLECTIONS = [
 ] as const;
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const [collection, setCollection] = React.useState<SlideRow["collection"]>("personal");
   const [query, setQuery] = React.useState("");
   const [uploadOpen, setUploadOpen] = React.useState(false);
@@ -65,6 +68,18 @@ export default function DashboardPage() {
   React.useEffect(() => {
     reload();
   }, [reload]);
+
+  const deleteSlide = async (e: React.MouseEvent, id: string, name: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(`${t("Delete this slide?")}\n${name}`)) return;
+    try {
+      await fetch(`${TILE_API}/api/slides/${encodeURIComponent(id)}`, { method: "DELETE" });
+    } catch {
+      /* ignore — reload will reflect reality */
+    }
+    reload();
+  };
 
   const serverUp = Array.isArray(remote);
   // live slides from the server, or (server down) the demo mock + local uploads
@@ -196,7 +211,7 @@ export default function DashboardPage() {
               <Link
                 key={s.id}
                 href={`/viewer?slide=${encodeURIComponent(s.id)}`}
-                className="grid grid-cols-[1.6fr_1fr_0.8fr_0.9fr_1fr_auto] items-center gap-3 border-b border-border/60 px-4 py-3 text-xs transition-colors last:border-0 hover:bg-surface-hover"
+                className="group grid grid-cols-[1.6fr_1fr_0.8fr_0.9fr_1fr_auto] items-center gap-3 border-b border-border/60 px-4 py-3 text-xs transition-colors last:border-0 hover:bg-surface-hover"
               >
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted">
@@ -215,7 +230,18 @@ export default function DashboardPage() {
                   <StatusBadge status={s.status} />
                 </div>
                 <div className="tabular text-muted">{s.updated}</div>
-                <ChevronRight className="size-4 text-muted/50" />
+                <div className="flex items-center gap-1">
+                  {serverUp && (
+                    <button
+                      aria-label="Delete slide"
+                      onClick={(e) => deleteSlide(e, s.id, s.name)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted opacity-0 transition-colors hover:bg-danger/10 hover:text-danger group-hover:opacity-100 cursor-pointer"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
+                  <ChevronRight className="size-4 text-muted/50" />
+                </div>
               </Link>
             ))}
           </div>

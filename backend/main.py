@@ -33,7 +33,7 @@ app = FastAPI(title="PathologyAI Tile Server")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -140,6 +140,18 @@ async def upload_slide(file: UploadFile = File(...)):
         "magnification": mag,
         "sizeMB": round(dest.stat().st_size / (1024 * 1024)),
     }
+
+
+@app.delete("/api/slides/{slide_id}")
+def delete_slide(slide_id: str):
+    """Remove a slide file from disk."""
+    path = resolve(slide_id)  # 404 if unknown
+    try:
+        path.unlink()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"could not delete: {exc}")
+    get_dz.cache_clear()
+    return {"deleted": slide_id}
 
 
 @app.get("/api/slides/{slide_id}/info")
