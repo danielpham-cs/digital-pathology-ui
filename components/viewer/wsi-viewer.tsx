@@ -15,7 +15,7 @@ const IMG_W = 2400;
 const IMG_H = 1600;
 const BASE_MAG = 40; // the synthetic slide represents a 40x scan
 
-export function WSIViewer() {
+export function WSIViewer({ slideId }: { slideId?: string | null }) {
   const { t } = useI18n();
   const ref = React.useRef<HTMLDivElement>(null);
   const osdRef = React.useRef<OpenSeadragon.Viewer | null>(null);
@@ -39,7 +39,8 @@ export function WSIViewer() {
   const baseMagRef = React.useRef(BASE_MAG);
   const regionsRef = React.useRef<SlideRegions | null>(null);
 
-  // init viewer once — try the real tile server, fall back to the synthetic slide
+  // init the viewer — try the real tile server, fall back to the synthetic
+  // slide. The page remounts this (via key) when the slide changes.
   React.useEffect(() => {
     if (!ref.current || osdRef.current) return;
     let cancelled = false;
@@ -52,9 +53,8 @@ export function WSIViewer() {
 
       let tileSources: OpenSeadragon.Options["tileSources"];
       if (real && real.length) {
-        // honor ?slide=<id> (e.g. an uploaded slide); else the first available
-        const wanted = new URLSearchParams(window.location.search).get("slide");
-        const s = (wanted && real.find((x) => x.id === wanted)) || real[0];
+        // honor the requested slide (e.g. an uploaded one); else the first
+        const s = (slideId && real.find((x) => x.id === slideId)) || real[0];
         tileSources = `${TILE_API}/api/slides/${s.id}.dzi`;
         dimsRef.current = { w: s.width, h: s.height };
         baseMagRef.current = Number(s.magnification) || 40;
