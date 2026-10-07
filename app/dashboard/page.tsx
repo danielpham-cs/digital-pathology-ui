@@ -21,7 +21,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
 import { SLIDE_LIST, type SlideRow } from "@/lib/mock-data";
+import { TILE_API, type RemoteSlide } from "@/lib/config";
 import { cn } from "@/lib/utils";
+
+// Real slides from the tile server → dashboard rows.
+function toRow(s: RemoteSlide): SlideRow {
+  return {
+    id: s.id,
+    name: s.name,
+    organ: s.magnification ? `${s.magnification}×` : "WSI",
+    stain: s.mpp ? `${s.mpp.toFixed(2)} µm/px` : "H&E",
+    sizeMB: s.sizeMB ?? 0,
+    status: "Ready",
+    updated: "—",
+    collection: "personal",
+  };
+}
 
 const COLLECTIONS = [
   { id: "personal", icon: User, label: "Personal", hint: "Your private slides" },
@@ -35,7 +50,27 @@ export default function DashboardPage() {
   const [uploadOpen, setUploadOpen] = React.useState(false);
   const uploadedSlides = useStore((s) => s.uploadedSlides);
 
-  const allSlides = React.useMemo(() => [...uploadedSlides, ...SLIDE_LIST], [uploadedSlides]);
+  // undefined = loading, null = tile server unreachable (demo mode), [] = up/empty
+  const [remote, setRemote] = React.useState<RemoteSlide[] | null | undefined>(undefined);
+  const reload = React.useCallback(async () => {
+    try {
+      const res = await fetch(`${TILE_API}/api/slides`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setRemote((data.slides ?? []).filter((s: RemoteSlide) => !s.error));
+    } catch {
+      setRemote(null);
+    }
+  }, []);
+  React.useEffect(() => {
+    reload();
+  }, [reload]);
+
+  const serverUp = Array.isArray(remote);
+  // live slides from the server, or (server down) the demo mock + local uploads
+  const allSlides: SlideRow[] = serverUp
+    ? remote!.map(toRow)
+    : [...uploadedSlides, ...SLIDE_LIST];
 
   const rows = allSlides.filter(
     (s) =>
@@ -55,7 +90,19 @@ export default function DashboardPage() {
           {/* header */}
           <div className="flex items-end justify-between">
             <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">Dashboard</h1>
+              <div className="flex items-center gap-2.5">
+                <h1 className="font-display text-2xl font-bold tracking-tight">Dashboard</h1>
+                {remote !== undefined &&
+                  (serverUp ? (
+                    <Badge variant="success">
+                      <span className="h-1.5 w-1.5 rounded-full bg-success" /> Live
+                    </Badge>
+                  ) : (
+                    <Badge variant="warning">
+                      <span className="h-1.5 w-1.5 rounded-full bg-warning" /> Demo (server offline)
+                    </Badge>
+                  ))}
+              </div>
               <p className="mt-1 text-sm text-muted">
                 Manage whole-slide images and launch AI analysis.
               </p>
@@ -139,7 +186,11 @@ export default function DashboardPage() {
 
             {/* rows */}
             {rows.length === 0 && (
-              <div className="px-4 py-10 text-center text-xs text-muted">No slides found.</div>
+              <div className="px-4 py-12 text-center text-xs text-muted">
+                {serverUp && allSlides.length === 0
+                  ? "No slides yet — click Upload slide to add one."
+                  : "No slides found."}
+              </div>
             )}
             {rows.map((s) => (
               <Link
@@ -171,7 +222,13 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <UploadModal
+        open={uploadOpen}
+        onClose={() => {
+          setUploadOpen(false);
+          reload(); // show the newly uploaded slide
+        }}
+      />
     </div>
   );
 }
@@ -207,6 +264,12 @@ function StatusBadge({ status }: { status: SlideRow["status"] }) {
     return (
       <Badge variant="warning">
         <Loader2 className="size-3 animate-spin" /> Processing
+      </Badge>
+    );
+  if (status === "Ready")
+    return (
+      <Badge variant="primary">
+        <CheckCircle2 className="size-3" /> Ready
       </Badge>
     );
   return (

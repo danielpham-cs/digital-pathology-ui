@@ -197,7 +197,7 @@ export interface SlideRow {
   organ: string;
   stain: string;
   sizeMB: number;
-  status: "Analyzed" | "Pending" | "Processing";
+  status: "Analyzed" | "Pending" | "Processing" | "Ready";
   updated: string;
   collection: "personal" | "shared" | "public";
 }
